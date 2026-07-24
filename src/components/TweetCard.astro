@@ -5,6 +5,7 @@ import {
   Bookmark02Icon,
   Comment01Icon,
   FavouriteIcon,
+  PlayCircle02Icon,
   RepeatIcon,
   Share01Icon,
 } from "@hugeicons/core-free-icons";
@@ -12,6 +13,8 @@ import {
 interface MediaItem {
   type: string;
   url: string;
+  thumbnailUrl?: string;
+  variants?: Array<{ url: string; contentType?: string; bitRate?: number }>;
 }
 
 interface UrlItem {
@@ -40,12 +43,14 @@ interface Tweet {
 const { tweet } = Astro.props as { tweet: Tweet };
 const date = new Date(tweet.createdAt);
 const xUrl = `https://x.com/${tweet.author.handle}/status/${tweet.id}`;
-const media = tweet.media.filter((item) => item.type === "image").slice(0, 4);
-const quoteMedia = (tweet.quote?.media ?? []).filter((item) => item.type === "image").slice(0, 4);
+const media = tweet.media.slice(0, 4);
+const quoteMedia = (tweet.quote?.media ?? []).slice(0, 4);
 const initials = tweet.author.displayName.trim().slice(0, 2).toUpperCase();
 const isLong = tweet.text.length > 700;
 const isQuoteLong = (tweet.quote?.text.length ?? 0) > 500;
 const quoteAuthorName = tweet.quote?.author.displayName ?? "Quoted post";
+const bestVideo = (item: MediaItem) => [...(item.variants ?? [])].filter((variant) => variant.contentType === "video/mp4" || variant.url.includes(".mp4")).sort((a, b) => (b.bitRate ?? 0) - (a.bitRate ?? 0))[0]?.url;
+const looksLikeVideoThumbnail = (item: MediaItem) => /(?:amplify_)?video_thumb/.test(item.url);
 ---
 
 <article class="tweet">
@@ -64,14 +69,25 @@ const quoteAuthorName = tweet.quote?.author.displayName ?? "Quoted post";
     <div class:list={["tweet-copy", { collapsed: isLong }]}><p class="tweet-text"><TweetText text={tweet.text} urls={tweet.urls} hasMedia={media.length > 0} /></p></div>
     {isLong && <button class="expand-copy" type="button" aria-expanded="false">Show more</button>}
     {media.length > 0 && <div class:list={["media", `media-count-${media.length}`, { "media-grid": media.length > 1 }]} data-media-group={tweet.id}>
-      {media.map((item, index) => <button class="media-trigger" type="button" data-media-url={item.url} data-media-index={index} data-media-label={`${tweet.author.displayName}, image ${index + 1} of ${media.length}`} aria-label={`Open image ${index + 1} of ${media.length}`}><img src={item.url} alt="" loading="lazy" decoding="async" /></button>)}
+      {media.map((item, index) => {
+        const videoUrl = bestVideo(item);
+        if (videoUrl) return <div class="video-frame"><video class="tweet-video" data-src={videoUrl} poster={item.thumbnailUrl ?? item.url} muted playsinline controls preload="none"></video></div>;
+        if (looksLikeVideoThumbnail(item)) return <a class="media-trigger video-preview" href={xUrl} target="_blank" rel="noreferrer" aria-label="Play video on X"><img src={item.url} alt="" loading="lazy" decoding="async" /><span class="play-badge"><HugeIcon icon={PlayCircle02Icon} size={42} /></span></a>;
+        return <button class="media-trigger" type="button" data-media-url={item.url} data-media-index={index} data-media-label={`${tweet.author.displayName}, image ${index + 1} of ${media.length}`} aria-label={`Open image ${index + 1} of ${media.length}`}><img src={item.url} alt="" loading="lazy" decoding="async" /></button>;
+      })}
     </div>}
     {tweet.quote && <div class="quote">
       <a class="quote-source" href={`https://x.com/${tweet.quote.author.handle}/status/${tweet.quote.id}`} target="_blank" rel="noreferrer"><b>{tweet.quote.author.displayName}</b> <span>@{tweet.quote.author.handle}</span></a>
       <div class:list={["quote-copy", { collapsed: isQuoteLong }]}><p><TweetText text={tweet.quote.text} urls={tweet.quote.urls} hasMedia={quoteMedia.length > 0} /></p></div>
       {isQuoteLong && <a class="quote-more" href={`https://x.com/${tweet.quote.author.handle}/status/${tweet.quote.id}`} target="_blank" rel="noreferrer">Read full quoted post ↗</a>}
       {quoteMedia.length > 0 && <div class:list={["quote-media", `media-count-${quoteMedia.length}`, { "media-grid": quoteMedia.length > 1 }]} data-media-group={`quote-${tweet.quote.id}`}>
-        {quoteMedia.map((item, index) => <button class="media-trigger" type="button" data-media-url={item.url} data-media-index={index} data-media-label={`${quoteAuthorName}, quoted image ${index + 1} of ${quoteMedia.length}`} aria-label={`Open quoted image ${index + 1} of ${quoteMedia.length}`}><img src={item.url} alt="" loading="lazy" decoding="async" /></button>)}
+        {quoteMedia.map((item, index) => {
+          const videoUrl = bestVideo(item);
+          const quoteUrl = `https://x.com/${tweet.quote?.author.handle}/status/${tweet.quote?.id}`;
+          if (videoUrl) return <div class="video-frame"><video class="tweet-video" data-src={videoUrl} poster={item.thumbnailUrl ?? item.url} muted playsinline controls preload="none"></video></div>;
+          if (looksLikeVideoThumbnail(item)) return <a class="media-trigger video-preview" href={quoteUrl} target="_blank" rel="noreferrer" aria-label="Play quoted video on X"><img src={item.url} alt="" loading="lazy" decoding="async" /><span class="play-badge"><HugeIcon icon={PlayCircle02Icon} size={42} /></span></a>;
+          return <button class="media-trigger" type="button" data-media-url={item.url} data-media-index={index} data-media-label={`${quoteAuthorName}, quoted image ${index + 1} of ${quoteMedia.length}`} aria-label={`Open quoted image ${index + 1} of ${quoteMedia.length}`}><img src={item.url} alt="" loading="lazy" decoding="async" /></button>;
+        })}
       </div>}
     </div>}
     <footer class="tweet-actions">

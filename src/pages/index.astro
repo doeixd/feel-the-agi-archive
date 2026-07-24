@@ -12,6 +12,7 @@ import {
   FavouriteIcon,
   Home01Icon,
   InformationCircleIcon,
+  PlayCircle02Icon,
   RepeatIcon,
   Search01Icon,
   Share01Icon,
@@ -118,6 +119,7 @@ const base = import.meta.env.BASE_URL;
       <template id="icon-favourite"><HugeIcon icon={FavouriteIcon} size={18} /></template>
       <template id="icon-bookmark"><HugeIcon icon={Bookmark02Icon} size={18} /></template>
       <template id="icon-share"><HugeIcon icon={Share01Icon} size={18} /></template>
+      <template id="icon-play"><HugeIcon icon={PlayCircle02Icon} size={42} /></template>
     </div>
     <script is:inline>
       const list = document.querySelector('#tweet-list');
@@ -146,6 +148,7 @@ const base = import.meta.env.BASE_URL;
       let lightboxIndex = 0;
       let renderedCount = 30;
       let lastRenderKey = 'latest|all|';
+      let videoObserver;
       const icon = (name) => document.querySelector(`#icon-${name}`).innerHTML;
       const escapeHtml = (value = '') => value.replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
       const safeUrl = (value = '') => /^https?:\/\//.test(value) || value.startsWith('data:image/') ? value : '#';
@@ -168,17 +171,23 @@ const base = import.meta.env.BASE_URL;
         }
         return output + escapeHtml(text.slice(cursor));
       };
-      const gallery = (media = [], quote = false, group = '', author = '') => media.length ? `<div class="${quote ? 'quote-media' : 'media'} media-count-${media.length}${media.length > 1 ? ' media-grid' : ''}" data-media-group="${escapeHtml(group)}">${media.slice(0, 4).map((item, index) => `<button class="media-trigger" type="button" data-media-url="${escapeHtml(safeUrl(item.url))}" data-media-index="${index}" data-media-label="${escapeHtml(`${author}, ${quote ? 'quoted ' : ''}image ${index + 1} of ${media.length}`)}" aria-label="Open image ${index + 1} of ${media.length}"><img src="${escapeHtml(safeUrl(item.url))}" alt="" loading="lazy" decoding="async"></button>`).join('')}</div>` : '';
+      const gallery = (media = [], quote = false, group = '', author = '', sourceUrl = '') => media.length ? `<div class="${quote ? 'quote-media' : 'media'} media-count-${media.length}${media.length > 1 ? ' media-grid' : ''}" data-media-group="${escapeHtml(group)}">${media.slice(0, 4).map((item, index) => {
+        const video = [...(item.variants || [])].filter((variant) => variant.contentType === 'video/mp4' || variant.url.includes('.mp4')).sort((a, b) => (b.bitRate || 0) - (a.bitRate || 0))[0];
+        if (video) return `<div class="video-frame"><video class="tweet-video" data-src="${escapeHtml(safeUrl(video.url))}" poster="${escapeHtml(safeUrl(item.thumbnailUrl || item.url))}" muted playsinline controls preload="none"></video></div>`;
+        if (/(?:amplify_)?video_thumb/.test(item.url)) return `<a class="media-trigger video-preview" href="${escapeHtml(safeUrl(sourceUrl))}" target="_blank" rel="noreferrer" aria-label="Play video on X"><img src="${escapeHtml(safeUrl(item.url))}" alt="" loading="lazy" decoding="async"><span class="play-badge">${icon('play')}</span></a>`;
+        return `<button class="media-trigger" type="button" data-media-url="${escapeHtml(safeUrl(item.url))}" data-media-index="${index}" data-media-label="${escapeHtml(`${author}, ${quote ? 'quoted ' : ''}image ${index + 1} of ${media.length}`)}" aria-label="Open image ${index + 1} of ${media.length}"><img src="${escapeHtml(safeUrl(item.url))}" alt="" loading="lazy" decoding="async"></button>`;
+      }).join('')}</div>` : '';
       const renderTweet = (tweet) => {
         const date = new Date(tweet.createdAt);
         const xUrl = `https://x.com/${encodeURIComponent(tweet.author.handle)}/status/${tweet.id}`;
-        const media = (tweet.media || []).filter((item) => item.type === 'image').slice(0, 4);
-        const quoteMedia = (tweet.quote?.media || []).filter((item) => item.type === 'image').slice(0, 4);
+        const media = (tweet.media || []).slice(0, 4);
+        const quoteMedia = (tweet.quote?.media || []).slice(0, 4);
         const long = tweet.text.length > 700;
         const quoteLong = (tweet.quote?.text.length || 0) > 500;
         const avatar = tweet.author.avatarUrl ? `<img src="${escapeHtml(safeUrl(tweet.author.avatarUrl))}" alt="">` : escapeHtml(tweet.author.displayName.trim().slice(0, 2).toUpperCase());
-        const quote = tweet.quote ? `<div class="quote"><a class="quote-source" href="https://x.com/${encodeURIComponent(tweet.quote.author.handle)}/status/${escapeHtml(String(tweet.quote.id))}" target="_blank" rel="noreferrer"><b>${escapeHtml(tweet.quote.author.displayName)}</b> <span>@${escapeHtml(tweet.quote.author.handle)}</span></a><div class="quote-copy${quoteLong ? ' collapsed' : ''}"><p>${linkify(tweet.quote.text, tweet.quote.urls || [], quoteMedia.length > 0)}</p></div>${quoteLong ? `<a class="quote-more" href="https://x.com/${encodeURIComponent(tweet.quote.author.handle)}/status/${escapeHtml(String(tweet.quote.id))}" target="_blank" rel="noreferrer">Read full quoted post ↗</a>` : ''}${gallery(quoteMedia, true, `quote-${tweet.quote.id}`, tweet.quote.author.displayName)}</div>` : '';
-        return `<article class="tweet"><div class="avatar" style="--hue:${Number(tweet.author.avatarHue) || 220}">${avatar}</div><div class="tweet-body"><header class="tweet-header"><span class="name">${escapeHtml(tweet.author.displayName)}</span><a class="handle" href="https://x.com/${encodeURIComponent(tweet.author.handle)}" target="_blank" rel="noreferrer">@${escapeHtml(tweet.author.handle)}</a><span class="dot">·</span><time datetime="${escapeHtml(tweet.createdAt)}" title="${escapeHtml(date.toLocaleString())}">${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time><a class="tweet-menu" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="Open original tweet">•••</a></header>${tweet.replyToId ? '<p class="replying">Archived reply</p>' : ''}<div class="tweet-copy${long ? ' collapsed' : ''}"><p class="tweet-text">${linkify(tweet.text, tweet.urls, media.length > 0)}</p></div>${long ? '<button class="expand-copy" type="button" aria-expanded="false">Show more</button>' : ''}${gallery(media, false, tweet.id, tweet.author.displayName)}${quote}<footer class="tweet-actions"><a class="action" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="View conversation">${icon('comment')}</a><span class="action" aria-hidden="true">${icon('repeat')}</span><span class="action like" aria-label="${Number(tweet.likeCount).toLocaleString()} likes">${icon('favourite')}<small>${Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(tweet.likeCount)}</small></span><span class="action" aria-hidden="true">${icon('bookmark')}</span><a class="action" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="Open original tweet">${icon('share')}</a></footer></div></article>`;
+        const quoteUrl = tweet.quote ? `https://x.com/${encodeURIComponent(tweet.quote.author.handle)}/status/${escapeHtml(String(tweet.quote.id))}` : '';
+        const quote = tweet.quote ? `<div class="quote"><a class="quote-source" href="${quoteUrl}" target="_blank" rel="noreferrer"><b>${escapeHtml(tweet.quote.author.displayName)}</b> <span>@${escapeHtml(tweet.quote.author.handle)}</span></a><div class="quote-copy${quoteLong ? ' collapsed' : ''}"><p>${linkify(tweet.quote.text, tweet.quote.urls || [], quoteMedia.length > 0)}</p></div>${quoteLong ? `<a class="quote-more" href="${quoteUrl}" target="_blank" rel="noreferrer">Read full quoted post ↗</a>` : ''}${gallery(quoteMedia, true, `quote-${tweet.quote.id}`, tweet.quote.author.displayName, quoteUrl)}</div>` : '';
+        return `<article class="tweet"><div class="avatar" style="--hue:${Number(tweet.author.avatarHue) || 220}">${avatar}</div><div class="tweet-body"><header class="tweet-header"><span class="name">${escapeHtml(tweet.author.displayName)}</span><a class="handle" href="https://x.com/${encodeURIComponent(tweet.author.handle)}" target="_blank" rel="noreferrer">@${escapeHtml(tweet.author.handle)}</a><span class="dot">·</span><time datetime="${escapeHtml(tweet.createdAt)}" title="${escapeHtml(date.toLocaleString())}">${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time><a class="tweet-menu" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="Open original tweet">•••</a></header>${tweet.replyToId ? '<p class="replying">Archived reply</p>' : ''}<div class="tweet-copy${long ? ' collapsed' : ''}"><p class="tweet-text">${linkify(tweet.text, tweet.urls, media.length > 0)}</p></div>${long ? '<button class="expand-copy" type="button" aria-expanded="false">Show more</button>' : ''}${gallery(media, false, tweet.id, tweet.author.displayName, xUrl)}${quote}<footer class="tweet-actions"><a class="action" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="View conversation">${icon('comment')}</a><span class="action" aria-hidden="true">${icon('repeat')}</span><span class="action like" aria-label="${Number(tweet.likeCount).toLocaleString()} likes">${icon('favourite')}<small>${Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(tweet.likeCount)}</small></span><span class="action" aria-hidden="true">${icon('bookmark')}</span><a class="action" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="Open original tweet">${icon('share')}</a></footer></div></article>`;
       };
       const ensureArchive = async () => {
         if (archive) return;
@@ -222,6 +231,7 @@ const base = import.meta.env.BASE_URL;
         const renderItems = canAppend ? visible.slice(renderedCount) : visible;
         const html = renderItems.map((tweet) => `<div data-date="${escapeHtml(tweet.createdAt)}" data-year="${new Date(tweet.createdAt).getFullYear()}">${renderTweet(tweet)}</div>`).join('');
         if (canAppend) list.insertAdjacentHTML('beforeend', html); else list.innerHTML = html;
+        observeVideos(list);
         renderedCount = visible.length;
         lastRenderKey = renderKey;
         count.textContent = `Showing ${visible.length.toLocaleString()} of ${matches.length.toLocaleString()} artifact${matches.length === 1 ? '' : 's'}`;
@@ -281,6 +291,24 @@ const base = import.meta.env.BASE_URL;
         if (entries.some((entry) => entry.isIntersecting)) loadNextPage();
       }, { rootMargin: '700px 0px' });
       infiniteObserver.observe(document.querySelector('.load-zone'));
+      const observeVideos = (container) => container.querySelectorAll('.tweet-video').forEach((video) => videoObserver?.observe(video));
+      videoObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          const video = entry.target;
+          if (entry.isIntersecting) {
+            if (!video.src && video.dataset.src) {
+              video.src = video.dataset.src;
+              video.load();
+            }
+            video.play().catch(() => {});
+          } else {
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
+          }
+        });
+      }, { threshold: .55, rootMargin: '120px 0px' });
+      observeVideos(document);
       const updateLightbox = () => {
         const item = lightboxItems[lightboxIndex];
         if (!item) return;
