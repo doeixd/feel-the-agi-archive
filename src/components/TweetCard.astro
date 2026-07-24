@@ -119,16 +119,12 @@ const looksLikeVideoThumbnail = (item: MediaItem) => item.type === "video" || it
       </div>}
     </div>}
     <footer class="tweet-actions">
-      <a class="action" href={xUrl} target="_blank" rel="noreferrer" aria-label={`${tweet.metrics?.replyCount ?? 0} replies`}><HugeIcon icon={Comment01Icon} size={18} /><small>{formatCount(tweet.metrics?.replyCount)}</small></a>
-      <span class="action" aria-label={`${tweet.metrics?.repostCount ?? 0} reposts`}><HugeIcon icon={RepeatIcon} size={18} /><small>{formatCount(tweet.metrics?.repostCount)}</small></span>
-      <span class="action like" aria-label={`${tweet.likeCount.toLocaleString()} likes`}><HugeIcon icon={FavouriteIcon} size={18} /><small>{formatCount(tweet.likeCount)}</small></span>
-      <span class="action views" aria-label={`${tweet.metrics?.viewCount ?? 0} views`}><HugeIcon icon={ViewIcon} size={18} /><small>{formatCount(tweet.metrics?.viewCount)}</small></span>
-      <span class="action" aria-hidden="true"><HugeIcon icon={Bookmark02Icon} size={18} /></span>
-      <a class="action" href={xUrl} target="_blank" rel="noreferrer" aria-label="Open original tweet"><HugeIcon icon={Share01Icon} size={18} /></a>
+      <a class="action" href={xUrl} target="_blank" rel="noreferrer" aria-label={`${tweet.metrics?.replyCount ?? 0} replies`}><HugeIcon icon={Comment01Icon} size={17} /><small>{formatCount(tweet.metrics?.replyCount)}</small></a>
+      <span class="action" aria-label={`${tweet.metrics?.repostCount ?? 0} reposts`}><HugeIcon icon={RepeatIcon} size={17} /><small>{formatCount(tweet.metrics?.repostCount)}</small></span>
+      <span class="action like" aria-label={`${tweet.likeCount.toLocaleString()} likes`}><HugeIcon icon={FavouriteIcon} size={17} /><small>{formatCount(tweet.likeCount)}</small></span>
+      <span class="action views" aria-label={`${tweet.metrics?.viewCount ?? 0} views`}><HugeIcon icon={ViewIcon} size={17} /><small>{formatCount(tweet.metrics?.viewCount)}</small></span>
+      <span class="action" aria-label={`${tweet.metrics?.bookmarkCount ?? 0} bookmarks`}><HugeIcon icon={Bookmark02Icon} size={17} /><small>{formatCount(tweet.metrics?.bookmarkCount)}</small></span>
+      <a class="action" href={xUrl} target="_blank" rel="noreferrer" aria-label="Open original tweet"><HugeIcon icon={Share01Icon} size={17} /></a>
     </footer>
-    {Boolean((tweet.metrics?.quoteCount ?? 0) || (tweet.metrics?.bookmarkCount ?? 0)) && <div class="secondary-metrics">
-      {Boolean(tweet.metrics?.quoteCount) && <span>{tweet.metrics?.quoteCount.toLocaleString()} quotes</span>}
-      {Boolean(tweet.metrics?.bookmarkCount) && <span>{tweet.metrics?.bookmarkCount.toLocaleString()} bookmarks</span>}
-    </div>}
   </div>
 </article>
