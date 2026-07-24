@@ -35,6 +35,11 @@ const years = [...new Set(tweets.map((tweet) => new Date(tweet.createdAt).getFul
       </aside>
 
       <section class="timeline" id="feed">
+        <header class="mobile-topbar">
+          <a href="/" class="mobile-avatar" aria-label="Feel The AGI home">⟋</a>
+          <div><strong>Feel The AGI</strong><span>{tweets.length.toLocaleString()} posts</span></div>
+          <button class="theme-toggle mobile-theme-toggle" type="button" aria-label="Toggle color theme">◐</button>
+        </header>
         <header class="masthead">
           <div class="eyebrow"><span></span> FIELD NOTES · 2020—2026</div>
           <h1>Feel The<br /><em>AGI</em></h1>
@@ -92,7 +97,7 @@ const years = [...new Set(tweets.map((tweet) => new Date(tweet.createdAt).getFul
       const count = document.querySelector('#result-count');
       const clearFilters = document.querySelector('#clear-filters');
       const loadMore = document.querySelector('#load-more');
-      const themeToggle = document.querySelector('#theme-toggle');
+      const themeToggles = [...document.querySelectorAll('.theme-toggle')];
       let selectedYear = 'all';
       let shown = 30;
       let archive = null;
@@ -129,7 +134,7 @@ const years = [...new Set(tweets.map((tweet) => new Date(tweet.createdAt).getFul
         const quoteLong = (tweet.quote?.text.length || 0) > 500;
         const avatar = tweet.author.avatarUrl ? `<img src="${escapeHtml(safeUrl(tweet.author.avatarUrl))}" alt="">` : escapeHtml(tweet.author.displayName.trim().slice(0, 2).toUpperCase());
         const quote = tweet.quote ? `<a class="quote" href="https://x.com/${encodeURIComponent(tweet.quote.author.handle)}/status/${tweet.quote.id}" target="_blank" rel="noreferrer"><div><b>${escapeHtml(tweet.quote.author.displayName)}</b> <span>@${escapeHtml(tweet.quote.author.handle)}</span></div><div class="quote-copy${quoteLong ? ' collapsed' : ''}"><p>${linkify(tweet.quote.text, [], quoteMedia.length > 0)}</p></div>${quoteLong ? '<span class="quote-more">Read full quoted post ↗</span>' : ''}${gallery(quoteMedia, true)}</a>` : '';
-        return `<article class="tweet"><div class="avatar" style="--hue:${Number(tweet.author.avatarHue) || 220}">${avatar}</div><div class="tweet-body"><header class="tweet-header"><span class="name">${escapeHtml(tweet.author.displayName)}</span><a class="handle" href="https://x.com/${encodeURIComponent(tweet.author.handle)}" target="_blank" rel="noreferrer">@${escapeHtml(tweet.author.handle)}</a><span class="dot">·</span><time datetime="${escapeHtml(tweet.createdAt)}" title="${escapeHtml(date.toLocaleString())}">${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time><a class="tweet-menu" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="Open original tweet">•••</a></header>${tweet.replyToId ? '<p class="replying">Archived reply</p>' : ''}<div class="tweet-copy${long ? ' collapsed' : ''}"><p class="tweet-text">${linkify(tweet.text, tweet.urls, media.length > 0)}</p></div>${long ? '<button class="expand-copy" type="button" aria-expanded="false">Show more</button>' : ''}${gallery(media)}${quote}<footer class="tweet-actions"><span class="like">♡ <small>${Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(tweet.likeCount)}</small></span><a href="${xUrl}" target="_blank" rel="noreferrer">View original <span>↗</span></a></footer></div></article>`;
+        return `<article class="tweet"><div class="avatar" style="--hue:${Number(tweet.author.avatarHue) || 220}">${avatar}</div><div class="tweet-body"><header class="tweet-header"><span class="name">${escapeHtml(tweet.author.displayName)}</span><a class="handle" href="https://x.com/${encodeURIComponent(tweet.author.handle)}" target="_blank" rel="noreferrer">@${escapeHtml(tweet.author.handle)}</a><span class="dot">·</span><time datetime="${escapeHtml(tweet.createdAt)}" title="${escapeHtml(date.toLocaleString())}">${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time><a class="tweet-menu" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="Open original tweet">•••</a></header>${tweet.replyToId ? '<p class="replying">Archived reply</p>' : ''}<div class="tweet-copy${long ? ' collapsed' : ''}"><p class="tweet-text">${linkify(tweet.text, tweet.urls, media.length > 0)}</p></div>${long ? '<button class="expand-copy" type="button" aria-expanded="false">Show more</button>' : ''}${gallery(media)}${quote}<footer class="tweet-actions"><a class="action" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="View conversation"><span>○</span></a><span class="action" aria-hidden="true"><span>↻</span></span><span class="action like" aria-label="${Number(tweet.likeCount).toLocaleString()} likes"><span>♡</span><small>${Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(tweet.likeCount)}</small></span><span class="action" aria-hidden="true"><span>▯</span></span><a class="action" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="Open original tweet"><span>↥</span></a></footer></div></article>`;
       };
       const ensureArchive = async () => {
         if (archive) return;
@@ -193,12 +198,12 @@ const years = [...new Set(tweets.map((tweet) => new Date(tweet.createdAt).getFul
         button.setAttribute('aria-expanded', String(!expanded));
         button.textContent = expanded ? 'Show more' : 'Show less';
       });
-      themeToggle.addEventListener('click', () => {
-        const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-        document.documentElement.dataset.theme = theme;
-        localStorage.setItem('theme', theme);
-        document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#080908' : '#f4f1e9';
-      });
+      themeToggles.forEach((toggle) => toggle.addEventListener('click', () => {
+          const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+          document.documentElement.dataset.theme = theme;
+          localStorage.setItem('theme', theme);
+          document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#080908' : '#f4f1e9';
+        }));
     </script>
   </body>
 </html>

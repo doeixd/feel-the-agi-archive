@@ -65,8 +65,11 @@ const isQuoteLong = (tweet.quote?.text.length ?? 0) > 500;
       </div>}
     </a>}
     <footer class="tweet-actions">
-      <span class="like">♡ <small>{Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(tweet.likeCount)}</small></span>
-      <a href={xUrl} target="_blank" rel="noreferrer">View original <span>↗</span></a>
+      <a class="action" href={xUrl} target="_blank" rel="noreferrer" aria-label="View conversation"><span>○</span></a>
+      <span class="action" aria-hidden="true"><span>↻</span></span>
+      <span class="action like" aria-label={`${tweet.likeCount.toLocaleString()} likes`}><span>♡</span><small>{Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(tweet.likeCount)}</small></span>
+      <span class="action" aria-hidden="true"><span>▯</span></span>
+      <a class="action" href={xUrl} target="_blank" rel="noreferrer" aria-label="Open original tweet"><span>↥</span></a>
     </footer>
   </div>
 </article>
