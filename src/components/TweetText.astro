@@ -1,0 +1,46 @@
+---
+interface UrlItem {
+  url?: string;
+  displayUrl?: string;
+  expandedUrl?: string;
+}
+
+const { text, urls = [], hasMedia = false } = Astro.props as {
+  text: string;
+  urls?: UrlItem[];
+  hasMedia?: boolean;
+};
+
+const urlMap = new Map(urls.filter((item) => item.url).map((item) => [item.url, item]));
+const pattern = /(https?:\/\/\S+|@[A-Za-z0-9_]+|#[\p{L}\p{N}_]+)/gu;
+const parts: Array<{ kind: "text" | "url" | "mention" | "hashtag"; value: string; href?: string; hidden?: boolean }> = [];
+let cursor = 0;
+
+for (const match of text.matchAll(pattern)) {
+  const index = match.index ?? 0;
+  if (index > cursor) parts.push({ kind: "text", value: text.slice(cursor, index) });
+  const value = match[0];
+  if (value.startsWith("http")) {
+    const entity = urlMap.get(value);
+    const isTrailingMediaToken = hasMedia && value.startsWith("https://t.co/") && !text.slice(index + value.length).trim();
+    parts.push({
+      kind: "url",
+      value: entity?.displayUrl || value.replace(/^https?:\/\//, ""),
+      href: entity?.expandedUrl || value,
+      hidden: isTrailingMediaToken,
+    });
+  } else if (value.startsWith("@")) {
+    parts.push({ kind: "mention", value, href: `https://x.com/${value.slice(1)}` });
+  } else {
+    parts.push({ kind: "hashtag", value, href: `https://x.com/hashtag/${encodeURIComponent(value.slice(1))}` });
+  }
+  cursor = index + value.length;
+}
+if (cursor < text.length) parts.push({ kind: "text", value: text.slice(cursor) });
+---
+
+{parts.map((part) => {
+  if (part.hidden) return null;
+  if (part.kind === "text") return part.value;
+  return <a class="inline-link" href={part.href} target="_blank" rel="noreferrer">{part.value}</a>;
+})}

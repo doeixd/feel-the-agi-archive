@@ -1,0 +1,72 @@
+---
+import TweetText from "./TweetText.astro";
+
+interface MediaItem {
+  type: string;
+  url: string;
+}
+
+interface UrlItem {
+  displayUrl?: string;
+  expandedUrl?: string;
+}
+
+interface Tweet {
+  id: string;
+  createdAt: string;
+  text: string;
+  likeCount: number;
+  replyToId?: string | null;
+  author: { handle: string; displayName: string; avatarUrl?: string | null; avatarHue: number };
+  media: MediaItem[];
+  urls: UrlItem[];
+  quote?: {
+    id: string;
+    text: string;
+    author: { handle: string; displayName: string };
+    media: MediaItem[];
+  } | null;
+}
+
+const { tweet } = Astro.props as { tweet: Tweet };
+const date = new Date(tweet.createdAt);
+const xUrl = `https://x.com/${tweet.author.handle}/status/${tweet.id}`;
+const media = tweet.media.filter((item) => item.type === "image").slice(0, 4);
+const quoteMedia = (tweet.quote?.media ?? []).filter((item) => item.type === "image").slice(0, 4);
+const initials = tweet.author.displayName.trim().slice(0, 2).toUpperCase();
+const isLong = tweet.text.length > 700;
+const isQuoteLong = (tweet.quote?.text.length ?? 0) > 500;
+---
+
+<article class="tweet">
+  <div class="avatar" style={`--hue: ${tweet.author.avatarHue}`}>
+    {tweet.author.avatarUrl ? <img src={tweet.author.avatarUrl} alt="" /> : initials}
+  </div>
+  <div class="tweet-body">
+    <header class="tweet-header">
+      <span class="name">{tweet.author.displayName}</span>
+      <a class="handle" href={`https://x.com/${tweet.author.handle}`} target="_blank" rel="noreferrer">@{tweet.author.handle}</a>
+      <span class="dot">·</span>
+      <time datetime={tweet.createdAt} title={date.toLocaleString()}>{date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</time>
+      <a class="tweet-menu" href={xUrl} target="_blank" rel="noreferrer" aria-label="Open original tweet">•••</a>
+    </header>
+    {tweet.replyToId && <p class="replying">Replying to a moment in the archive</p>}
+    <div class:list={["tweet-copy", { collapsed: isLong }]}><p class="tweet-text"><TweetText text={tweet.text} urls={tweet.urls} hasMedia={media.length > 0} /></p></div>
+    {isLong && <button class="expand-copy" type="button" aria-expanded="false">Show more</button>}
+    {media.length > 0 && <div class:list={["media", `media-count-${media.length}`, { "media-grid": media.length > 1 }]}>
+      {media.map((item) => <img src={item.url} alt="" loading="lazy" decoding="async" />)}
+    </div>}
+    {tweet.quote && <a class="quote" href={`https://x.com/${tweet.quote.author.handle}/status/${tweet.quote.id}`} target="_blank" rel="noreferrer">
+      <div><b>{tweet.quote.author.displayName}</b> <span>@{tweet.quote.author.handle}</span></div>
+      <div class:list={["quote-copy", { collapsed: isQuoteLong }]}><p><TweetText text={tweet.quote.text} hasMedia={quoteMedia.length > 0} /></p></div>
+      {isQuoteLong && <span class="quote-more">Read full quoted post ↗</span>}
+      {quoteMedia.length > 0 && <div class:list={["quote-media", `media-count-${quoteMedia.length}`, { "media-grid": quoteMedia.length > 1 }]}>
+        {quoteMedia.map((item) => <img src={item.url} alt="" loading="lazy" decoding="async" />)}
+      </div>}
+    </a>}
+    <footer class="tweet-actions">
+      <span class="like">♡ <small>{Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(tweet.likeCount)}</small></span>
+      <a href={xUrl} target="_blank" rel="noreferrer">View original <span>↗</span></a>
+    </footer>
+  </div>
+</article>

@@ -1,0 +1,204 @@
+---
+import tweets from "../data/tweets.json";
+import TweetCard from "../components/TweetCard.astro";
+import "../styles/global.css";
+
+const years = [...new Set(tweets.map((tweet) => new Date(tweet.createdAt).getFullYear()))].sort((a, b) => b - a);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Feel The AGI: a living archive of the scaling era." />
+    <meta name="theme-color" content="#080908" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <title>Feel The AGI · The Scaling Era Archive</title>
+    <script is:inline>
+      const savedTheme = localStorage.getItem('theme');
+      document.documentElement.dataset.theme = savedTheme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    </script>
+  </head>
+  <body>
+    <main class="shell">
+      <aside class="left-rail">
+        <a class="brand" href="/" aria-label="Feel The AGI home"><span class="mark">⟋</span><span>FEEL<br />THE AGI</span></a>
+        <nav aria-label="Archive navigation">
+          <a class="active" href="#feed"><span>⌁</span> Archive</a>
+          <a href="#about"><span>i</span> Context</a>
+          <a href="https://x.com" target="_blank" rel="noreferrer"><span>↗</span> Original network</a>
+        </nav>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme"><span class="theme-icon">◐</span><span class="theme-label">Theme</span></button>
+        <p class="rail-note">A hand-kept record of the moment when the future stopped arriving slowly.</p>
+      </aside>
+
+      <section class="timeline" id="feed">
+        <header class="masthead">
+          <div class="eyebrow"><span></span> FIELD NOTES · 2020—2026</div>
+          <h1>Feel The<br /><em>AGI</em></h1>
+          <p>Not a feed. A time capsule of technological acceleration, captured while it was still happening.</p>
+          <div class="statline"><strong>{tweets.length.toLocaleString()}</strong> bookmarked fragments <span>·</span> reverse chronological</div>
+        </header>
+
+        <div class="controls" aria-label="Archive controls">
+          <div class="sort-tabs" role="group" aria-label="Sort archive">
+            <button class="selected" data-sort="latest" aria-pressed="true">Latest first</button>
+            <button data-sort="oldest" aria-pressed="false">Earliest</button>
+            <button data-sort="random" aria-pressed="false">⤨ Random</button>
+          </div>
+          <label class="search"><span>⌕</span><input id="search" type="search" placeholder="Search names, words, moments" aria-label="Search the archive" autocomplete="off" /></label>
+        </div>
+        <div class="year-strip" aria-label="Filter by year">
+          <button class="selected" data-year="all" aria-pressed="true">All</button>
+          {years.map((year) => <button data-year={year} aria-pressed="false">{year}</button>)}
+        </div>
+        <div class="result-bar"><p class="result-count" id="result-count" aria-live="polite">Showing 30 of {tweets.length.toLocaleString()} artifacts</p><button id="clear-filters" hidden>Clear filters</button></div>
+        <div id="tweet-list" data-total={tweets.length}>
+          {tweets.slice(0, 30).map((tweet) => <div data-date={tweet.createdAt} data-year={new Date(tweet.createdAt).getFullYear()}><TweetCard tweet={tweet} /></div>)}
+        </div>
+        <div class="load-zone"><button id="load-more">Load 30 more <span>↓</span></button></div>
+        <section class="mobile-context" id="about">
+          <span>ABOUT THE COLLECTION</span>
+          <h2>Living through the winding-up of the world.</h2>
+          <p>AGI, robotics, medicine, China, labor, surveillance, drones, markets, and the odd little jokes people made when they felt the ground move.</p>
+        </section>
+      </section>
+
+      <aside class="right-rail">
+        <div class="placard">
+          <span class="placard-number">EXHIBIT 01</span>
+          <h2>Living through the winding-up of the world.</h2>
+          <p>AGI, robotics, medicine, China, labor, surveillance, drones, markets, and the odd little jokes people made when they felt the ground move.</p>
+        </div>
+        <dl class="collection-stats">
+          <div><dt>{tweets.length.toLocaleString()}</dt><dd>artifacts</dd></div>
+          <div><dt>{years.length}</dt><dd>years</dd></div>
+          <div><dt>1</dt><dd>uncertain future</dd></div>
+        </dl>
+        <div class="legend">
+          <span>READING MODE</span>
+          <p><b>Latest</b> keeps the original reverse chronology. <b>Randomize</b> lets distant moments collide.</p>
+        </div>
+        <p class="source-note">Tweets retain their original attribution and link back to X. Counts are captured from the archive, not live.</p>
+      </aside>
+    </main>
+    <script is:inline>
+      const list = document.querySelector('#tweet-list');
+      const sortButtons = [...document.querySelectorAll('[data-sort]')];
+      const yearButtons = [...document.querySelectorAll('[data-year]')];
+      const search = document.querySelector('#search');
+      const count = document.querySelector('#result-count');
+      const clearFilters = document.querySelector('#clear-filters');
+      const loadMore = document.querySelector('#load-more');
+      const themeToggle = document.querySelector('#theme-toggle');
+      let selectedYear = 'all';
+      let shown = 30;
+      let archive = null;
+      let ordered = null;
+      let activeSort = 'latest';
+      const escapeHtml = (value = '') => value.replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
+      const safeUrl = (value = '') => /^https?:\/\//.test(value) || value.startsWith('data:image/') ? value : '#';
+      const linkify = (text, urls = [], hasMedia = false) => {
+        const map = new Map(urls.filter((item) => item.url).map((item) => [item.url, item]));
+        const pattern = /(https?:\/\/\S+|@[A-Za-z0-9_]+|#[\p{L}\p{N}_]+)/gu;
+        let output = '', cursor = 0;
+        for (const match of text.matchAll(pattern)) {
+          output += escapeHtml(text.slice(cursor, match.index));
+          const value = match[0];
+          if (value.startsWith('http')) {
+            const entity = map.get(value);
+            const hidden = hasMedia && value.startsWith('https://t.co/') && !text.slice(match.index + value.length).trim();
+            if (!hidden) output += `<a class="inline-link" href="${escapeHtml(safeUrl(entity?.expandedUrl || value))}" target="_blank" rel="noreferrer">${escapeHtml(entity?.displayUrl || value.replace(/^https?:\/\//, ''))}</a>`;
+          } else {
+            const href = value.startsWith('@') ? `https://x.com/${value.slice(1)}` : `https://x.com/hashtag/${encodeURIComponent(value.slice(1))}`;
+            output += `<a class="inline-link" href="${href}" target="_blank" rel="noreferrer">${escapeHtml(value)}</a>`;
+          }
+          cursor = match.index + value.length;
+        }
+        return output + escapeHtml(text.slice(cursor));
+      };
+      const gallery = (media = [], quote = false) => media.length ? `<div class="${quote ? 'quote-media' : 'media'} media-count-${media.length}${media.length > 1 ? ' media-grid' : ''}">${media.slice(0, 4).map((item) => `<img src="${escapeHtml(safeUrl(item.url))}" alt="" loading="lazy" decoding="async">`).join('')}</div>` : '';
+      const renderTweet = (tweet) => {
+        const date = new Date(tweet.createdAt);
+        const xUrl = `https://x.com/${encodeURIComponent(tweet.author.handle)}/status/${tweet.id}`;
+        const media = (tweet.media || []).filter((item) => item.type === 'image').slice(0, 4);
+        const quoteMedia = (tweet.quote?.media || []).filter((item) => item.type === 'image').slice(0, 4);
+        const long = tweet.text.length > 700;
+        const quoteLong = (tweet.quote?.text.length || 0) > 500;
+        const avatar = tweet.author.avatarUrl ? `<img src="${escapeHtml(safeUrl(tweet.author.avatarUrl))}" alt="">` : escapeHtml(tweet.author.displayName.trim().slice(0, 2).toUpperCase());
+        const quote = tweet.quote ? `<a class="quote" href="https://x.com/${encodeURIComponent(tweet.quote.author.handle)}/status/${tweet.quote.id}" target="_blank" rel="noreferrer"><div><b>${escapeHtml(tweet.quote.author.displayName)}</b> <span>@${escapeHtml(tweet.quote.author.handle)}</span></div><div class="quote-copy${quoteLong ? ' collapsed' : ''}"><p>${linkify(tweet.quote.text, [], quoteMedia.length > 0)}</p></div>${quoteLong ? '<span class="quote-more">Read full quoted post ↗</span>' : ''}${gallery(quoteMedia, true)}</a>` : '';
+        return `<article class="tweet"><div class="avatar" style="--hue:${Number(tweet.author.avatarHue) || 220}">${avatar}</div><div class="tweet-body"><header class="tweet-header"><span class="name">${escapeHtml(tweet.author.displayName)}</span><a class="handle" href="https://x.com/${encodeURIComponent(tweet.author.handle)}" target="_blank" rel="noreferrer">@${escapeHtml(tweet.author.handle)}</a><span class="dot">·</span><time datetime="${escapeHtml(tweet.createdAt)}" title="${escapeHtml(date.toLocaleString())}">${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time><a class="tweet-menu" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="Open original tweet">•••</a></header>${tweet.replyToId ? '<p class="replying">Archived reply</p>' : ''}<div class="tweet-copy${long ? ' collapsed' : ''}"><p class="tweet-text">${linkify(tweet.text, tweet.urls, media.length > 0)}</p></div>${long ? '<button class="expand-copy" type="button" aria-expanded="false">Show more</button>' : ''}${gallery(media)}${quote}<footer class="tweet-actions"><span class="like">♡ <small>${Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(tweet.likeCount)}</small></span><a href="${xUrl}" target="_blank" rel="noreferrer">View original <span>↗</span></a></footer></div></article>`;
+      };
+      const ensureArchive = async () => {
+        if (archive) return;
+        archive = await fetch('/tweets.json').then((response) => response.json());
+        ordered = [...archive];
+      };
+      const fisherYates = (items) => {
+        const result = [...items];
+        for (let index = result.length - 1; index > 0; index--) {
+          const swap = Math.floor(Math.random() * (index + 1));
+          [result[index], result[swap]] = [result[swap], result[index]];
+        }
+        return result;
+      };
+      const applyFilters = async () => {
+        await ensureArchive();
+        const query = search.value.trim().toLowerCase();
+        const matches = ordered.filter((tweet) => {
+          const matchesYear = selectedYear === 'all' || String(new Date(tweet.createdAt).getFullYear()) === selectedYear;
+          const haystack = `${tweet.author.displayName} ${tweet.author.handle} ${tweet.text} ${tweet.quote?.text || ''}`.toLowerCase();
+          return matchesYear && (!query || haystack.includes(query));
+        });
+        const visible = matches.slice(0, shown);
+        list.innerHTML = visible.map((tweet) => `<div data-date="${tweet.createdAt}" data-year="${new Date(tweet.createdAt).getFullYear()}">${renderTweet(tweet)}</div>`).join('');
+        count.textContent = `Showing ${visible.length.toLocaleString()} of ${matches.length.toLocaleString()} artifact${matches.length === 1 ? '' : 's'}`;
+        clearFilters.hidden = selectedYear === 'all' && !query;
+        loadMore.hidden = visible.length >= matches.length;
+      };
+      sortButtons.forEach((button) => button.addEventListener('click', async () => {
+        await ensureArchive();
+        activeSort = button.dataset.sort;
+        sortButtons.forEach((item) => item.classList.toggle('selected', item === button));
+        sortButtons.forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+        ordered = activeSort === 'random' ? fisherYates(archive) : [...archive].sort((a, b) => activeSort === 'latest' ? b.createdAt.localeCompare(a.createdAt) : a.createdAt.localeCompare(b.createdAt));
+        shown = 30;
+        await applyFilters();
+        window.scrollTo({ top: document.querySelector('.controls').offsetTop, behavior: 'smooth' });
+      }));
+      yearButtons.forEach((button) => button.addEventListener('click', async () => {
+        selectedYear = button.dataset.year;
+        shown = 30;
+        yearButtons.forEach((item) => item.classList.toggle('selected', item === button));
+        yearButtons.forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+        await applyFilters();
+      }));
+      let searchTimer;
+      search.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => { shown = 30; applyFilters(); }, 120); });
+      loadMore.addEventListener('click', () => { shown += 30; applyFilters(); });
+      clearFilters.addEventListener('click', async () => {
+        selectedYear = 'all'; search.value = '';
+        yearButtons.forEach((item) => item.classList.toggle('selected', item.dataset.year === 'all'));
+        shown = 30;
+        await applyFilters();
+      });
+      list.addEventListener('click', (event) => {
+        const button = event.target.closest('.expand-copy');
+        if (!button) return;
+        const copy = button.previousElementSibling;
+        const expanded = button.getAttribute('aria-expanded') === 'true';
+        copy.classList.toggle('collapsed', expanded);
+        button.setAttribute('aria-expanded', String(!expanded));
+        button.textContent = expanded ? 'Show more' : 'Show less';
+      });
+      themeToggle.addEventListener('click', () => {
+        const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = theme;
+        localStorage.setItem('theme', theme);
+        document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#080908' : '#f4f1e9';
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "feel-the-agi",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "prepare-data": "python3 scripts/prepare_data.py"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.4",
+    "astro": "^7.0.0",
+    "typescript": "^5.7.3"
+  }
+}
