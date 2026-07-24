@@ -33,6 +33,7 @@ interface Tweet {
     text: string;
     author: { handle: string; displayName: string };
     media: MediaItem[];
+    urls?: UrlItem[];
   } | null;
 }
 
@@ -66,7 +67,7 @@ const isQuoteLong = (tweet.quote?.text.length ?? 0) > 500;
     </div>}
     {tweet.quote && <div class="quote">
       <a class="quote-source" href={`https://x.com/${tweet.quote.author.handle}/status/${tweet.quote.id}`} target="_blank" rel="noreferrer"><b>{tweet.quote.author.displayName}</b> <span>@{tweet.quote.author.handle}</span></a>
-      <div class:list={["quote-copy", { collapsed: isQuoteLong }]}><p><TweetText text={tweet.quote.text} hasMedia={quoteMedia.length > 0} /></p></div>
+      <div class:list={["quote-copy", { collapsed: isQuoteLong }]}><p><TweetText text={tweet.quote.text} urls={tweet.quote.urls} hasMedia={quoteMedia.length > 0} /></p></div>
       {isQuoteLong && <a class="quote-more" href={`https://x.com/${tweet.quote.author.handle}/status/${tweet.quote.id}`} target="_blank" rel="noreferrer">Read full quoted post ↗</a>}
       {quoteMedia.length > 0 && <div class:list={["quote-media", `media-count-${quoteMedia.length}`, { "media-grid": quoteMedia.length > 1 }]} data-media-group={`quote-${tweet.quote.id}`}>
         {quoteMedia.map((item, index) => <button class="media-trigger" type="button" data-media-url={item.url} data-media-index={index} aria-label={`Open quoted image ${index + 1} of ${quoteMedia.length}`}><img src={item.url} alt="" loading="lazy" decoding="async" /></button>)}

@@ -51,6 +51,7 @@ for tweet in tweets:
                         "displayName": (quote.get("author") or {}).get("displayName") or "Unknown",
                     },
                     "media": quote.get("media") or [],
+                    "urls": (quote.get("entities") or {}).get("urls") or [],
                 }
                 if quote
                 else None
