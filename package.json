@@ -7,7 +7,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "prepare-data": "python3 scripts/prepare_data.py"
+    "prepare-data": "python3 scripts/prepare_data.py",
+    "fetch-avatars": "python3 scripts/fetch_avatars.py",
+    "archive-assets": "python3 scripts/archive_assets.py"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",

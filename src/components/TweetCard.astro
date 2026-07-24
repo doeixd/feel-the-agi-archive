@@ -3,11 +3,15 @@ import TweetText from "./TweetText.astro";
 import HugeIcon from "./HugeIcon.astro";
 import {
   Bookmark02Icon,
+  CheckmarkBadge01Icon,
   Comment01Icon,
   FavouriteIcon,
+  Maximize03Icon,
   PlayCircle02Icon,
   RepeatIcon,
   Share01Icon,
+  ThreadIcon,
+  ViewIcon,
 } from "@hugeicons/core-free-icons";
 
 interface MediaItem {
@@ -28,15 +32,26 @@ interface Tweet {
   text: string;
   likeCount: number;
   replyToId?: string | null;
-  author: { handle: string; displayName: string; avatarUrl?: string | null; avatarHue: number };
+  author: { handle: string; displayName: string; avatarUrl?: string | null; avatarHue: number; verified?: boolean };
+  metrics?: { replyCount: number; repostCount: number; quoteCount: number; bookmarkCount: number; viewCount: number };
+  replyToHandle?: string | null;
+  thread?: { position: number; total: number } | null;
+  replyContext?: {
+    id: string;
+    text: string;
+    createdAt: string;
+    author: { handle: string; displayName: string; avatarUrl?: string | null; verified?: boolean };
+    media?: MediaItem[];
+  } | null;
   media: MediaItem[];
   urls: UrlItem[];
   quote?: {
     id: string;
     text: string;
-    author: { handle: string; displayName: string };
+    author: { handle: string; displayName: string; avatarUrl?: string | null; verified?: boolean };
     media: MediaItem[];
     urls?: UrlItem[];
+    metrics?: { replyCount: number; repostCount: number; quoteCount: number; bookmarkCount: number; viewCount: number };
   } | null;
 }
 
@@ -49,8 +64,9 @@ const initials = tweet.author.displayName.trim().slice(0, 2).toUpperCase();
 const isLong = tweet.text.length > 700;
 const isQuoteLong = (tweet.quote?.text.length ?? 0) > 500;
 const quoteAuthorName = tweet.quote?.author.displayName ?? "Quoted post";
+const formatCount = (value = 0) => value ? Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value) : "";
 const bestVideo = (item: MediaItem) => [...(item.variants ?? [])].filter((variant) => variant.contentType === "video/mp4" || variant.url.includes(".mp4")).sort((a, b) => (b.bitRate ?? 0) - (a.bitRate ?? 0))[0]?.url;
-const looksLikeVideoThumbnail = (item: MediaItem) => /(?:amplify_)?video_thumb/.test(item.url);
+const looksLikeVideoThumbnail = (item: MediaItem) => item.type === "video" || item.type === "gif" || /(?:amplify_)?video_thumb/.test(item.url);
 ---
 
 <article class="tweet">
@@ -60,42 +76,59 @@ const looksLikeVideoThumbnail = (item: MediaItem) => /(?:amplify_)?video_thumb/.
   <div class="tweet-body">
     <header class="tweet-header">
       <span class="name">{tweet.author.displayName}</span>
+      {tweet.author.verified && <span class="verified" aria-label="Verified account"><HugeIcon icon={CheckmarkBadge01Icon} size={16} /></span>}
       <a class="handle" href={`https://x.com/${tweet.author.handle}`} target="_blank" rel="noreferrer">@{tweet.author.handle}</a>
       <span class="dot">·</span>
       <time datetime={tweet.createdAt} title={date.toLocaleString()}>{date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</time>
       <a class="tweet-menu" href={xUrl} target="_blank" rel="noreferrer" aria-label="Open original tweet">•••</a>
     </header>
-    {tweet.replyToId && <p class="replying">Replying to a moment in the archive</p>}
+    {tweet.thread && <a class="thread-label" href={xUrl} target="_blank" rel="noreferrer"><HugeIcon icon={ThreadIcon} size={15} /> Post {tweet.thread.position} of {tweet.thread.total} in this author's thread</a>}
+    {tweet.replyToId && <p class="replying">Replying to {tweet.replyToHandle ? <a href={`https://x.com/${tweet.replyToHandle}`} target="_blank" rel="noreferrer">@{tweet.replyToHandle}</a> : "another post"}</p>}
+    {tweet.replyContext && <div class="reply-parent">
+      <a class="reply-parent-header" href={`https://x.com/${tweet.replyContext.author.handle}/status/${tweet.replyContext.id}`} target="_blank" rel="noreferrer">
+        <span class="reply-parent-avatar">{tweet.replyContext.author.avatarUrl ? <img src={tweet.replyContext.author.avatarUrl} alt="" /> : tweet.replyContext.author.displayName.slice(0, 2).toUpperCase()}</span>
+        <b>{tweet.replyContext.author.displayName}</b>
+        {tweet.replyContext.author.verified && <HugeIcon icon={CheckmarkBadge01Icon} size={14} />}
+        <span>@{tweet.replyContext.author.handle}</span>
+      </a>
+      <p><TweetText text={tweet.replyContext.text} /></p>
+      {tweet.replyContext.media?.[0] && <img class="reply-parent-media" src={tweet.replyContext.media[0].thumbnailUrl ?? tweet.replyContext.media[0].url} alt="" loading="lazy" />}
+    </div>}
     <div class:list={["tweet-copy", { collapsed: isLong }]}><p class="tweet-text"><TweetText text={tweet.text} urls={tweet.urls} hasMedia={media.length > 0} /></p></div>
     {isLong && <button class="expand-copy" type="button" aria-expanded="false">Show more</button>}
     {media.length > 0 && <div class:list={["media", `media-count-${media.length}`, { "media-grid": media.length > 1 }]} data-media-group={tweet.id}>
       {media.map((item, index) => {
         const videoUrl = bestVideo(item);
-        if (videoUrl) return <div class="video-frame"><video class="tweet-video" data-src={videoUrl} poster={item.thumbnailUrl ?? item.url} muted playsinline controls preload="none"></video></div>;
+        if (videoUrl) return <div class="video-frame"><video class="tweet-video" data-src={videoUrl} poster={item.thumbnailUrl ?? item.url} muted playsinline controls preload="none"></video><button class="video-lightbox-trigger" type="button" data-video-url={videoUrl} data-video-poster={item.thumbnailUrl ?? item.url} data-media-label={`${tweet.author.displayName}, video ${index + 1}`} aria-label="Open video in media viewer"><HugeIcon icon={Maximize03Icon} size={18} /></button></div>;
         if (looksLikeVideoThumbnail(item)) return <a class="media-trigger video-preview" href={xUrl} target="_blank" rel="noreferrer" aria-label="Play video on X"><img src={item.url} alt="" loading="lazy" decoding="async" /><span class="play-badge"><HugeIcon icon={PlayCircle02Icon} size={42} /></span></a>;
         return <button class="media-trigger" type="button" data-media-url={item.url} data-media-index={index} data-media-label={`${tweet.author.displayName}, image ${index + 1} of ${media.length}`} aria-label={`Open image ${index + 1} of ${media.length}`}><img src={item.url} alt="" loading="lazy" decoding="async" /></button>;
       })}
     </div>}
     {tweet.quote && <div class="quote">
-      <a class="quote-source" href={`https://x.com/${tweet.quote.author.handle}/status/${tweet.quote.id}`} target="_blank" rel="noreferrer"><b>{tweet.quote.author.displayName}</b> <span>@{tweet.quote.author.handle}</span></a>
+      <div class="quote-header">{tweet.quote.author.avatarUrl && <img src={tweet.quote.author.avatarUrl} alt="" />}<a class="quote-source" href={`https://x.com/${tweet.quote.author.handle}/status/${tweet.quote.id}`} target="_blank" rel="noreferrer"><b>{tweet.quote.author.displayName}</b>{tweet.quote.author.verified && <HugeIcon icon={CheckmarkBadge01Icon} size={14} />} <span>@{tweet.quote.author.handle}</span></a></div>
       <div class:list={["quote-copy", { collapsed: isQuoteLong }]}><p><TweetText text={tweet.quote.text} urls={tweet.quote.urls} hasMedia={quoteMedia.length > 0} /></p></div>
       {isQuoteLong && <a class="quote-more" href={`https://x.com/${tweet.quote.author.handle}/status/${tweet.quote.id}`} target="_blank" rel="noreferrer">Read full quoted post ↗</a>}
       {quoteMedia.length > 0 && <div class:list={["quote-media", `media-count-${quoteMedia.length}`, { "media-grid": quoteMedia.length > 1 }]} data-media-group={`quote-${tweet.quote.id}`}>
         {quoteMedia.map((item, index) => {
           const videoUrl = bestVideo(item);
           const quoteUrl = `https://x.com/${tweet.quote?.author.handle}/status/${tweet.quote?.id}`;
-          if (videoUrl) return <div class="video-frame"><video class="tweet-video" data-src={videoUrl} poster={item.thumbnailUrl ?? item.url} muted playsinline controls preload="none"></video></div>;
+          if (videoUrl) return <div class="video-frame"><video class="tweet-video" data-src={videoUrl} poster={item.thumbnailUrl ?? item.url} muted playsinline controls preload="none"></video><button class="video-lightbox-trigger" type="button" data-video-url={videoUrl} data-video-poster={item.thumbnailUrl ?? item.url} data-media-label={`${quoteAuthorName}, quoted video ${index + 1}`} aria-label="Open quoted video in media viewer"><HugeIcon icon={Maximize03Icon} size={18} /></button></div>;
           if (looksLikeVideoThumbnail(item)) return <a class="media-trigger video-preview" href={quoteUrl} target="_blank" rel="noreferrer" aria-label="Play quoted video on X"><img src={item.url} alt="" loading="lazy" decoding="async" /><span class="play-badge"><HugeIcon icon={PlayCircle02Icon} size={42} /></span></a>;
           return <button class="media-trigger" type="button" data-media-url={item.url} data-media-index={index} data-media-label={`${quoteAuthorName}, quoted image ${index + 1} of ${quoteMedia.length}`} aria-label={`Open quoted image ${index + 1} of ${quoteMedia.length}`}><img src={item.url} alt="" loading="lazy" decoding="async" /></button>;
         })}
       </div>}
     </div>}
     <footer class="tweet-actions">
-      <a class="action" href={xUrl} target="_blank" rel="noreferrer" aria-label="View conversation"><HugeIcon icon={Comment01Icon} size={18} /></a>
-      <span class="action" aria-hidden="true"><HugeIcon icon={RepeatIcon} size={18} /></span>
-      <span class="action like" aria-label={`${tweet.likeCount.toLocaleString()} likes`}><HugeIcon icon={FavouriteIcon} size={18} /><small>{Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(tweet.likeCount)}</small></span>
+      <a class="action" href={xUrl} target="_blank" rel="noreferrer" aria-label={`${tweet.metrics?.replyCount ?? 0} replies`}><HugeIcon icon={Comment01Icon} size={18} /><small>{formatCount(tweet.metrics?.replyCount)}</small></a>
+      <span class="action" aria-label={`${tweet.metrics?.repostCount ?? 0} reposts`}><HugeIcon icon={RepeatIcon} size={18} /><small>{formatCount(tweet.metrics?.repostCount)}</small></span>
+      <span class="action like" aria-label={`${tweet.likeCount.toLocaleString()} likes`}><HugeIcon icon={FavouriteIcon} size={18} /><small>{formatCount(tweet.likeCount)}</small></span>
+      <span class="action views" aria-label={`${tweet.metrics?.viewCount ?? 0} views`}><HugeIcon icon={ViewIcon} size={18} /><small>{formatCount(tweet.metrics?.viewCount)}</small></span>
       <span class="action" aria-hidden="true"><HugeIcon icon={Bookmark02Icon} size={18} /></span>
       <a class="action" href={xUrl} target="_blank" rel="noreferrer" aria-label="Open original tweet"><HugeIcon icon={Share01Icon} size={18} /></a>
     </footer>
+    {Boolean((tweet.metrics?.quoteCount ?? 0) || (tweet.metrics?.bookmarkCount ?? 0)) && <div class="secondary-metrics">
+      {Boolean(tweet.metrics?.quoteCount) && <span>{tweet.metrics?.quoteCount.toLocaleString()} quotes</span>}
+      {Boolean(tweet.metrics?.bookmarkCount) && <span>{tweet.metrics?.bookmarkCount.toLocaleString()} bookmarks</span>}
+    </div>}
   </div>
 </article>

@@ -5,13 +5,14 @@
 - Node.js 20 or newer
 - npm
 - Python 3 for the data export
-- Access to the shared bookmark export and decision ledgers when regenerating data
+- Access to the shared bookmark exports, thread captures, decision ledgers, and binary asset archive when regenerating data
 
 ## Commands
 
 ```bash
 npm install
 npm run dev
+npm run archive-assets
 npm run prepare-data
 npx astro check
 npm run build
@@ -22,7 +23,7 @@ The development server normally runs at `http://localhost:4321`.
 
 ## Final Verification Checklist
 
-1. `npm run prepare-data` exports the expected number of records.
+1. `npm run prepare-data` exports the expected number of records and enrichment counts.
 2. `npx astro check` reports zero errors and warnings.
 3. `npm run build` succeeds.
 4. `dist/index.html` references an existing `/_astro/*.css` asset.
@@ -32,9 +33,11 @@ The development server normally runs at `http://localhost:4321`.
 8. Infinite scroll appends without replacing expanded cards.
 9. One-, two-, three-, and four-image galleries render correctly.
 10. Main and quoted images open in the lightbox.
-11. Thumbnail-only videos link to X; real MP4 records mount only in view.
+11. Archived MP4 records mount only in view and open with controls in the lightbox.
 12. Dark and light themes work on desktop and mobile.
 13. Search and sorting controls scroll away naturally.
+14. Every local JSON asset reference resolves to a file under `public/assets/`.
+15. A representative MP4 request returns HTTP 206 when a byte range is requested.
 
 ## Performance Model
 

@@ -8,16 +8,20 @@ import {
   ArrowRight01Icon,
   Bookmark02Icon,
   Cancel01Icon,
+  CheckmarkBadge01Icon,
   Comment01Icon,
   FavouriteIcon,
   Home01Icon,
   InformationCircleIcon,
+  Maximize03Icon,
   PlayCircle02Icon,
   RepeatIcon,
   Search01Icon,
   Share01Icon,
   ShuffleIcon,
   Sun03Icon,
+  ThreadIcon,
+  ViewIcon,
 } from "@hugeicons/core-free-icons";
 import "../styles/global.css";
 
@@ -109,9 +113,9 @@ const base = import.meta.env.BASE_URL;
     </main>
     <dialog class="lightbox" id="media-lightbox" aria-label="Media viewer">
       <div class="lightbox-toolbar"><span id="lightbox-count" aria-live="polite"></span><button id="lightbox-close" type="button" aria-label="Close media viewer"><HugeIcon icon={Cancel01Icon} size={24} /></button></div>
-      <button class="lightbox-nav lightbox-prev" id="lightbox-prev" type="button" aria-label="Previous image"><HugeIcon icon={ArrowLeft01Icon} size={28} /></button>
-      <figure><img id="lightbox-image" alt="" /><figcaption id="lightbox-caption"></figcaption></figure>
-      <button class="lightbox-nav lightbox-next" id="lightbox-next" type="button" aria-label="Next image"><HugeIcon icon={ArrowRight01Icon} size={28} /></button>
+      <button class="lightbox-nav lightbox-prev" id="lightbox-prev" type="button" aria-label="Previous media"><HugeIcon icon={ArrowLeft01Icon} size={28} /></button>
+      <figure><img id="lightbox-image" alt="" /><video id="lightbox-video" controls playsinline hidden></video><figcaption id="lightbox-caption"></figcaption></figure>
+      <button class="lightbox-nav lightbox-next" id="lightbox-next" type="button" aria-label="Next media"><HugeIcon icon={ArrowRight01Icon} size={28} /></button>
     </dialog>
     <div class="icon-templates" aria-hidden="true">
       <template id="icon-comment"><HugeIcon icon={Comment01Icon} size={18} /></template>
@@ -120,6 +124,10 @@ const base = import.meta.env.BASE_URL;
       <template id="icon-bookmark"><HugeIcon icon={Bookmark02Icon} size={18} /></template>
       <template id="icon-share"><HugeIcon icon={Share01Icon} size={18} /></template>
       <template id="icon-play"><HugeIcon icon={PlayCircle02Icon} size={42} /></template>
+      <template id="icon-maximize"><HugeIcon icon={Maximize03Icon} size={18} /></template>
+      <template id="icon-verified"><HugeIcon icon={CheckmarkBadge01Icon} size={15} /></template>
+      <template id="icon-thread"><HugeIcon icon={ThreadIcon} size={15} /></template>
+      <template id="icon-view"><HugeIcon icon={ViewIcon} size={18} /></template>
     </div>
     <script is:inline>
       const list = document.querySelector('#tweet-list');
@@ -133,6 +141,7 @@ const base = import.meta.env.BASE_URL;
       const baseUrl = document.body.dataset.base || '/';
       const lightbox = document.querySelector('#media-lightbox');
       const lightboxImage = document.querySelector('#lightbox-image');
+      const lightboxVideo = document.querySelector('#lightbox-video');
       const lightboxCount = document.querySelector('#lightbox-count');
       const lightboxClose = document.querySelector('#lightbox-close');
       const lightboxPrev = document.querySelector('#lightbox-prev');
@@ -150,8 +159,9 @@ const base = import.meta.env.BASE_URL;
       let lastRenderKey = 'latest|all|';
       let videoObserver;
       const icon = (name) => document.querySelector(`#icon-${name}`).innerHTML;
+      const formatCount = (value = 0) => value ? Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(value) : '';
       const escapeHtml = (value = '') => value.replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
-      const safeUrl = (value = '') => /^https?:\/\//.test(value) || value.startsWith('data:image/') ? value : '#';
+      const safeUrl = (value = '') => /^https?:\/\//.test(value) || value.startsWith('data:image/') || (value.startsWith('/') && !value.startsWith('//')) ? value : '#';
       const linkify = (text, urls = [], hasMedia = false) => {
         const map = new Map(urls.filter((item) => item.url).map((item) => [item.url, item]));
         const pattern = /(https?:\/\/\S+|@[A-Za-z0-9_]+|#[\p{L}\p{N}_]+)/gu;
@@ -173,8 +183,8 @@ const base = import.meta.env.BASE_URL;
       };
       const gallery = (media = [], quote = false, group = '', author = '', sourceUrl = '') => media.length ? `<div class="${quote ? 'quote-media' : 'media'} media-count-${media.length}${media.length > 1 ? ' media-grid' : ''}" data-media-group="${escapeHtml(group)}">${media.slice(0, 4).map((item, index) => {
         const video = [...(item.variants || [])].filter((variant) => variant.contentType === 'video/mp4' || variant.url.includes('.mp4')).sort((a, b) => (b.bitRate || 0) - (a.bitRate || 0))[0];
-        if (video) return `<div class="video-frame"><video class="tweet-video" data-src="${escapeHtml(safeUrl(video.url))}" poster="${escapeHtml(safeUrl(item.thumbnailUrl || item.url))}" muted playsinline controls preload="none"></video></div>`;
-        if (/(?:amplify_)?video_thumb/.test(item.url)) return `<a class="media-trigger video-preview" href="${escapeHtml(safeUrl(sourceUrl))}" target="_blank" rel="noreferrer" aria-label="Play video on X"><img src="${escapeHtml(safeUrl(item.url))}" alt="" loading="lazy" decoding="async"><span class="play-badge">${icon('play')}</span></a>`;
+        if (video) return `<div class="video-frame"><video class="tweet-video" data-src="${escapeHtml(safeUrl(video.url))}" poster="${escapeHtml(safeUrl(item.thumbnailUrl || item.url))}" muted playsinline controls preload="none"></video><button class="video-lightbox-trigger" type="button" data-video-url="${escapeHtml(safeUrl(video.url))}" data-video-poster="${escapeHtml(safeUrl(item.thumbnailUrl || item.url))}" data-media-label="${escapeHtml(`${author}, ${quote ? 'quoted ' : ''}video ${index + 1}`)}" aria-label="Open video in media viewer">${icon('maximize')}</button></div>`;
+        if (item.type === 'video' || item.type === 'gif' || /(?:amplify_)?video_thumb/.test(item.url)) return `<a class="media-trigger video-preview" href="${escapeHtml(safeUrl(sourceUrl))}" target="_blank" rel="noreferrer" aria-label="Play video on X"><img src="${escapeHtml(safeUrl(item.url))}" alt="" loading="lazy" decoding="async"><span class="play-badge">${icon('play')}</span></a>`;
         return `<button class="media-trigger" type="button" data-media-url="${escapeHtml(safeUrl(item.url))}" data-media-index="${index}" data-media-label="${escapeHtml(`${author}, ${quote ? 'quoted ' : ''}image ${index + 1} of ${media.length}`)}" aria-label="Open image ${index + 1} of ${media.length}"><img src="${escapeHtml(safeUrl(item.url))}" alt="" loading="lazy" decoding="async"></button>`;
       }).join('')}</div>` : '';
       const renderTweet = (tweet) => {
@@ -185,9 +195,16 @@ const base = import.meta.env.BASE_URL;
         const long = tweet.text.length > 700;
         const quoteLong = (tweet.quote?.text.length || 0) > 500;
         const avatar = tweet.author.avatarUrl ? `<img src="${escapeHtml(safeUrl(tweet.author.avatarUrl))}" alt="">` : escapeHtml(tweet.author.displayName.trim().slice(0, 2).toUpperCase());
+        const verified = tweet.author.verified ? `<span class="verified" aria-label="Verified account">${icon('verified')}</span>` : '';
+        const thread = tweet.thread ? `<a class="thread-label" href="${xUrl}" target="_blank" rel="noreferrer">${icon('thread')} Post ${tweet.thread.position} of ${tweet.thread.total} in this author's thread</a>` : '';
+        const replying = tweet.replyToId ? `<p class="replying">Replying to ${tweet.replyToHandle ? `<a href="https://x.com/${encodeURIComponent(tweet.replyToHandle)}" target="_blank" rel="noreferrer">@${escapeHtml(tweet.replyToHandle)}</a>` : 'another post'}</p>` : '';
+        const parent = tweet.replyContext ? `<div class="reply-parent"><a class="reply-parent-header" href="https://x.com/${encodeURIComponent(tweet.replyContext.author.handle)}/status/${escapeHtml(String(tweet.replyContext.id))}" target="_blank" rel="noreferrer"><span class="reply-parent-avatar">${tweet.replyContext.author.avatarUrl ? `<img src="${escapeHtml(safeUrl(tweet.replyContext.author.avatarUrl))}" alt="">` : escapeHtml(tweet.replyContext.author.displayName.slice(0, 2).toUpperCase())}</span><b>${escapeHtml(tweet.replyContext.author.displayName)}</b>${tweet.replyContext.author.verified ? icon('verified') : ''}<span>@${escapeHtml(tweet.replyContext.author.handle)}</span></a><p>${linkify(tweet.replyContext.text)}</p>${tweet.replyContext.media?.[0] ? `<img class="reply-parent-media" src="${escapeHtml(safeUrl(tweet.replyContext.media[0].thumbnailUrl || tweet.replyContext.media[0].url))}" alt="" loading="lazy">` : ''}</div>` : '';
         const quoteUrl = tweet.quote ? `https://x.com/${encodeURIComponent(tweet.quote.author.handle)}/status/${escapeHtml(String(tweet.quote.id))}` : '';
-        const quote = tweet.quote ? `<div class="quote"><a class="quote-source" href="${quoteUrl}" target="_blank" rel="noreferrer"><b>${escapeHtml(tweet.quote.author.displayName)}</b> <span>@${escapeHtml(tweet.quote.author.handle)}</span></a><div class="quote-copy${quoteLong ? ' collapsed' : ''}"><p>${linkify(tweet.quote.text, tweet.quote.urls || [], quoteMedia.length > 0)}</p></div>${quoteLong ? `<a class="quote-more" href="${quoteUrl}" target="_blank" rel="noreferrer">Read full quoted post ↗</a>` : ''}${gallery(quoteMedia, true, `quote-${tweet.quote.id}`, tweet.quote.author.displayName, quoteUrl)}</div>` : '';
-        return `<article class="tweet"><div class="avatar" style="--hue:${Number(tweet.author.avatarHue) || 220}">${avatar}</div><div class="tweet-body"><header class="tweet-header"><span class="name">${escapeHtml(tweet.author.displayName)}</span><a class="handle" href="https://x.com/${encodeURIComponent(tweet.author.handle)}" target="_blank" rel="noreferrer">@${escapeHtml(tweet.author.handle)}</a><span class="dot">·</span><time datetime="${escapeHtml(tweet.createdAt)}" title="${escapeHtml(date.toLocaleString())}">${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time><a class="tweet-menu" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="Open original tweet">•••</a></header>${tweet.replyToId ? '<p class="replying">Archived reply</p>' : ''}<div class="tweet-copy${long ? ' collapsed' : ''}"><p class="tweet-text">${linkify(tweet.text, tweet.urls, media.length > 0)}</p></div>${long ? '<button class="expand-copy" type="button" aria-expanded="false">Show more</button>' : ''}${gallery(media, false, tweet.id, tweet.author.displayName, xUrl)}${quote}<footer class="tweet-actions"><a class="action" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="View conversation">${icon('comment')}</a><span class="action" aria-hidden="true">${icon('repeat')}</span><span class="action like" aria-label="${Number(tweet.likeCount).toLocaleString()} likes">${icon('favourite')}<small>${Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(tweet.likeCount)}</small></span><span class="action" aria-hidden="true">${icon('bookmark')}</span><a class="action" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="Open original tweet">${icon('share')}</a></footer></div></article>`;
+        const quoteAvatar = tweet.quote?.author.avatarUrl ? `<img src="${escapeHtml(safeUrl(tweet.quote.author.avatarUrl))}" alt="">` : '';
+        const quote = tweet.quote ? `<div class="quote"><div class="quote-header">${quoteAvatar}<a class="quote-source" href="${quoteUrl}" target="_blank" rel="noreferrer"><b>${escapeHtml(tweet.quote.author.displayName)}</b>${tweet.quote.author.verified ? icon('verified') : ''}<span>@${escapeHtml(tweet.quote.author.handle)}</span></a></div><div class="quote-copy${quoteLong ? ' collapsed' : ''}"><p>${linkify(tweet.quote.text, tweet.quote.urls || [], quoteMedia.length > 0)}</p></div>${quoteLong ? `<a class="quote-more" href="${quoteUrl}" target="_blank" rel="noreferrer">Read full quoted post ↗</a>` : ''}${gallery(quoteMedia, true, `quote-${tweet.quote.id}`, tweet.quote.author.displayName, quoteUrl)}</div>` : '';
+        const metrics = tweet.metrics || {};
+        const secondary = metrics.quoteCount || metrics.bookmarkCount ? `<div class="secondary-metrics">${metrics.quoteCount ? `<span>${Number(metrics.quoteCount).toLocaleString()} quotes</span>` : ''}${metrics.bookmarkCount ? `<span>${Number(metrics.bookmarkCount).toLocaleString()} bookmarks</span>` : ''}</div>` : '';
+        return `<article class="tweet"><div class="avatar" style="--hue:${Number(tweet.author.avatarHue) || 220}">${avatar}</div><div class="tweet-body"><header class="tweet-header"><span class="name">${escapeHtml(tweet.author.displayName)}</span>${verified}<a class="handle" href="https://x.com/${encodeURIComponent(tweet.author.handle)}" target="_blank" rel="noreferrer">@${escapeHtml(tweet.author.handle)}</a><span class="dot">·</span><time datetime="${escapeHtml(tweet.createdAt)}" title="${escapeHtml(date.toLocaleString())}">${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time><a class="tweet-menu" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="Open original tweet">•••</a></header>${thread}${replying}${parent}<div class="tweet-copy${long ? ' collapsed' : ''}"><p class="tweet-text">${linkify(tweet.text, tweet.urls, media.length > 0)}</p></div>${long ? '<button class="expand-copy" type="button" aria-expanded="false">Show more</button>' : ''}${gallery(media, false, tweet.id, tweet.author.displayName, xUrl)}${quote}<footer class="tweet-actions"><a class="action" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="${metrics.replyCount || 0} replies">${icon('comment')}<small>${formatCount(metrics.replyCount)}</small></a><span class="action" aria-label="${metrics.repostCount || 0} reposts">${icon('repeat')}<small>${formatCount(metrics.repostCount)}</small></span><span class="action like" aria-label="${Number(tweet.likeCount).toLocaleString()} likes">${icon('favourite')}<small>${formatCount(tweet.likeCount)}</small></span><span class="action views" aria-label="${metrics.viewCount || 0} views">${icon('view')}<small>${formatCount(metrics.viewCount)}</small></span><span class="action" aria-hidden="true">${icon('bookmark')}</span><a class="action" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="Open original tweet">${icon('share')}</a></footer>${secondary}</div></article>`;
       };
       const ensureArchive = async () => {
         if (archive) return;
@@ -312,8 +329,22 @@ const base = import.meta.env.BASE_URL;
       const updateLightbox = () => {
         const item = lightboxItems[lightboxIndex];
         if (!item) return;
-        lightboxImage.src = item.dataset.mediaUrl;
-        lightboxImage.alt = item.dataset.mediaLabel || 'Archived tweet media';
+        const videoUrl = item.dataset.videoUrl;
+        if (videoUrl) {
+          lightboxImage.hidden = true;
+          lightboxVideo.hidden = false;
+          lightboxVideo.poster = item.dataset.videoPoster || '';
+          lightboxVideo.src = videoUrl;
+          lightboxVideo.play().catch(() => {});
+        } else {
+          lightboxVideo.pause();
+          lightboxVideo.removeAttribute('src');
+          lightboxVideo.load();
+          lightboxVideo.hidden = true;
+          lightboxImage.hidden = false;
+          lightboxImage.src = item.dataset.mediaUrl;
+          lightboxImage.alt = item.dataset.mediaLabel || 'Archived tweet media';
+        }
         lightboxCount.textContent = `${lightboxIndex + 1} / ${lightboxItems.length}`;
         lightboxPrev.hidden = lightboxItems.length < 2;
         lightboxNext.hidden = lightboxItems.length < 2;
@@ -323,10 +354,10 @@ const base = import.meta.env.BASE_URL;
         updateLightbox();
       };
       document.addEventListener('click', (event) => {
-        const trigger = event.target.closest('.media-trigger');
+        const trigger = event.target.closest('.media-trigger:not(.video-preview), .video-lightbox-trigger');
         if (!trigger) return;
         const gallery = trigger.closest('[data-media-group]');
-        lightboxItems = [...gallery.querySelectorAll('.media-trigger')];
+        lightboxItems = [...gallery.querySelectorAll('.media-trigger:not(.video-preview), .video-lightbox-trigger')];
         lightboxIndex = lightboxItems.indexOf(trigger);
         updateLightbox();
         lightbox.showModal();
@@ -343,6 +374,7 @@ const base = import.meta.env.BASE_URL;
         }
       }, true);
       lightboxClose.addEventListener('click', () => lightbox.close());
+      lightbox.addEventListener('close', () => { lightboxVideo.pause(); lightboxVideo.removeAttribute('src'); lightboxVideo.load(); });
       lightboxPrev.addEventListener('click', () => stepLightbox(-1));
       lightboxNext.addEventListener('click', () => stepLightbox(1));
       lightbox.addEventListener('click', (event) => { if (event.target === lightbox) lightbox.close(); });

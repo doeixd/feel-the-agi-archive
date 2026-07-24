@@ -2,7 +2,7 @@
 
 ## Public Data
 
-This repository and deployed site are public. The archive contains public tweet text, handles, media URLs, timestamps, quoted posts, and captured like counts.
+This repository and deployed site are public. The archive contains public tweet text, handles, profile pictures, media, timestamps, quoted posts, limited reply context, and captured engagement counts.
 
 ## Secrets
 
@@ -21,22 +21,23 @@ Authentication remains in Windows credential stores and browser profiles.
 
 Tweet text is escaped before dynamic HTML insertion. Links are restricted to HTTP and HTTPS. Mentions and hashtags are mapped to X URLs. Media URLs are protocol-checked on the client.
 
-## External Dependencies
+## Archive Boundaries
 
-- Images currently hotlink `pbs.twimg.com` and may disappear, rate-limit, or be blocked.
-- Thumbnail-only video records depend on the original X post for playback.
+- Main and quoted profile pictures, images, posters, and playable videos are locally archived in production.
+- Reply-parent previews can still contain an external media URL when that context asset was not part of the selected archive.
+- Thumbnail-only future video records depend on the original X post for playback.
 - Google Fonts are optional external resources.
 - Original tweet links can be deleted, restricted, or changed.
 
-Broken images display a media-unavailable fallback. The repository preserves metadata, not guaranteed permanent copies of every media object.
+The 2.7 GB binary archive is excluded from Git and must be retained separately. Broken images display a media-unavailable fallback. The repository preserves metadata and manifests, not the binary payload itself.
 
 ## Fidelity Limitations
 
-- Most synced profiles did not include real avatar URLs, so generated initials are used.
-- Like counts are historical snapshots.
-- Reply context may be unavailable.
+- Profile, verification, and engagement values are historical snapshots.
+- Reply context is available for 44 selected records, not every reply.
+- Same-author thread positions are available for 32 selected records and do not represent every participant in a conversation.
 - Quote depth is limited by source data.
-- Video thumbnails are not equivalent to archived videos.
+- Repost provenance was normalized away by the authenticated bookmark output; repost counts remain available.
 - This project resembles X for historical context but is not affiliated with X.
 
 ## Browser Support

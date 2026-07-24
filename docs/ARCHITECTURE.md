@@ -12,21 +12,25 @@
 
 ```text
 X bookmarks
-  -> Birdclaw live sync
-  -> ~/.birdclaw/birdclaw.sqlite
-  -> /tmp/all_bookmarks.json
+  -> Birdclaw working export (/tmp/all_bookmarks.json)
+  -> authenticated Bird full export (/tmp/bird-enriched-bookmarks.json)
+  -> selected reply threads (/tmp/opencode/feel-the-agi-threads/)
   -> manual bucket decision TSV files
+  -> scripts/archive_assets.py
+  -> public/assets/ + src/data/asset-map.json
   -> scripts/prepare_data.py
   -> src/data/tweets.json (Astro build input)
   -> public/tweets.json (lazy browser data)
   -> dist/ (static deployment)
 ```
 
-`scripts/prepare_data.py` joins the full bookmark export to the manual curation ledger and emits only records assigned to `feel_the_agi`.
+`scripts/prepare_data.py` joins the working export, authenticated enrichment, selected thread context, asset manifest, and manual curation ledger. It emits only records assigned to `feel_the_agi`.
 
 The script currently expects the shared workspace paths:
 
 - `/tmp/all_bookmarks.json`
+- `/tmp/bird-enriched-bookmarks.json`
+- `/tmp/opencode/feel-the-agi-threads/`
 - `/home/Patrick/bookmarks_organized/.manual_bucket_decisions*.tsv`
 
 The superseded `.manual_bucket_decisions_81_850.tsv` is intentionally excluded because the range was later split and reviewed again.
@@ -45,16 +49,20 @@ Subsequent pages append 30 cards at a time. Sorting or changing filters replaces
 - `src/components/HugeIcon.astro`: HugeIcons SVG renderer
 - `src/styles/global.css`: responsive themes and gallery layouts
 - `scripts/prepare_data.py`: curated data export
+- `scripts/archive_assets.py`: profile, image, poster, and video archiver
+- `src/data/asset-map.json`: mapping from source URLs and handles to local assets
 - `public/tweets.json`: browser archive payload
 
 ## Tweet Data Contract
 
 Each archive record contains:
 
-- Tweet ID, timestamp, text, likes, and reply status
-- Author display name, handle, avatar URL or generated hue
+- Tweet ID, timestamp, text, conversation ID, and reply status
+- Author display name, handle, archived avatar, generated hue, and verification state
+- Reply, repost, quote, bookmark, like, and view snapshots
 - URL entities
 - Up to four media records
-- Optional quoted tweet with its own author, text, URLs, and media
+- Optional quoted tweet with its own author, text, URLs, metrics, and media
+- Optional reply-parent preview and same-author thread position
 
 Engagement values are snapshots from synchronization time, not live values.

@@ -14,9 +14,10 @@ Feel The AGI is not an AI news feed. It preserves what it felt like to live thro
 - Reverse-chronological, earliest-first, and randomized reading modes
 - Search and year filters across 1,483 curated artifacts
 - Infinite scrolling with an accessible load-more fallback
-- Tweet attribution, quote posts, links, image galleries, and source URLs
-- X-style multi-image layouts and a keyboard-accessible media lightbox
-- Viewport-managed native video playback when MP4 variants are available
+- Archived profile pictures, verification state, engagement snapshots, quote posts, and source URLs
+- Reply-parent previews and same-author thread positions when captured context is available
+- X-style media layouts and a keyboard-accessible image and video lightbox
+- Viewport-managed playback for 472 locally archived MP4 files
 - Responsive dark and light themes
 - Static deployment with a small initial page and lazily fetched archive data
 
@@ -36,6 +37,8 @@ npm run build
 ```
 
 The static production output is written to `dist/`.
+
+The 2.7 GB binary archive under `public/assets/` is deployed with the site but intentionally excluded from Git. The committed JSON manifests preserve its expected paths; a source-only checkout needs a separately restored asset archive for complete media rendering.
 
 ## Documentation
 

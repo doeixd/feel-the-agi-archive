@@ -7,6 +7,8 @@ Birdclaw is the local-first Twitter/X workspace used to collect and cache the so
 - Database: `~/.birdclaw/birdclaw.sqlite`
 - Downloaded media: `~/.birdclaw/media/originals/`
 - Full working export: `/tmp/all_bookmarks.json`
+- Authenticated full export: `/tmp/bird-enriched-bookmarks.json`
+- Selected reply threads: `/tmp/opencode/feel-the-agi-threads/`
 
 Do not commit authentication cookies, tokens, the Birdclaw database, or private account exports.
 
@@ -46,7 +48,17 @@ Inspect without downloading:
 birdclaw media fetch --kind bookmark --include-video --dry-run --json
 ```
 
-Birdclaw's cache currently contains image originals and video thumbnails. See [MEDIA.md](MEDIA.md) for the video metadata limitation discovered during development.
+Birdclaw's cache supplied many image originals. Authenticated Bird output supplied profile metadata, engagement counts, extended media entities, and MP4 variants used by the archive asset script. See [MEDIA.md](MEDIA.md) for the resulting local archive.
+
+## Authenticated Enrichment
+
+The enrichment snapshot was generated with Bird's full JSON bookmark output:
+
+```bash
+bird bookmarks --all --json-full > /tmp/bird-enriched-bookmarks.json
+```
+
+Authentication cookies were supplied only as ephemeral process environment variables. Never place their values in shell history, scripts, documentation, manifests, or Git. Selected reply threads were captured separately because the bookmark payload alone does not include parent and conversation context.
 
 ## Database Inspection
 
