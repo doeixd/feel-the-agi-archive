@@ -1,0 +1,23 @@
+---
+type IconNode = [string, Record<string, string | number>];
+
+const { icon, size = 20, strokeWidth, class: className } = Astro.props as {
+  icon: IconNode[];
+  size?: number;
+  strokeWidth?: number;
+  class?: string;
+};
+
+const attributeName = (name: string) => name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+const markup = icon.map(([tag, attributes]) => {
+  const attrs = Object.entries(attributes)
+    .filter(([name]) => name !== "key")
+    .map(([name, value]) => `${attributeName(name)}="${String(strokeWidth && name === "strokeWidth" ? strokeWidth : value)}"`)
+    .join(" ");
+  return `<${tag} ${attrs}></${tag}>`;
+}).join("");
+---
+
+<svg class={className} width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+  <Fragment set:html={markup} />
+</svg>

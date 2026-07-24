@@ -1,5 +1,13 @@
 ---
 import TweetText from "./TweetText.astro";
+import HugeIcon from "./HugeIcon.astro";
+import {
+  Bookmark02Icon,
+  Comment01Icon,
+  FavouriteIcon,
+  RepeatIcon,
+  Share01Icon,
+} from "@hugeicons/core-free-icons";
 
 interface MediaItem {
   type: string;
@@ -53,23 +61,23 @@ const isQuoteLong = (tweet.quote?.text.length ?? 0) > 500;
     {tweet.replyToId && <p class="replying">Replying to a moment in the archive</p>}
     <div class:list={["tweet-copy", { collapsed: isLong }]}><p class="tweet-text"><TweetText text={tweet.text} urls={tweet.urls} hasMedia={media.length > 0} /></p></div>
     {isLong && <button class="expand-copy" type="button" aria-expanded="false">Show more</button>}
-    {media.length > 0 && <div class:list={["media", `media-count-${media.length}`, { "media-grid": media.length > 1 }]}>
-      {media.map((item) => <img src={item.url} alt="" loading="lazy" decoding="async" />)}
+    {media.length > 0 && <div class:list={["media", `media-count-${media.length}`, { "media-grid": media.length > 1 }]} data-media-group={tweet.id}>
+      {media.map((item, index) => <button class="media-trigger" type="button" data-media-url={item.url} data-media-index={index} aria-label={`Open image ${index + 1} of ${media.length}`}><img src={item.url} alt="" loading="lazy" decoding="async" /></button>)}
     </div>}
-    {tweet.quote && <a class="quote" href={`https://x.com/${tweet.quote.author.handle}/status/${tweet.quote.id}`} target="_blank" rel="noreferrer">
-      <div><b>{tweet.quote.author.displayName}</b> <span>@{tweet.quote.author.handle}</span></div>
+    {tweet.quote && <div class="quote">
+      <a class="quote-source" href={`https://x.com/${tweet.quote.author.handle}/status/${tweet.quote.id}`} target="_blank" rel="noreferrer"><b>{tweet.quote.author.displayName}</b> <span>@{tweet.quote.author.handle}</span></a>
       <div class:list={["quote-copy", { collapsed: isQuoteLong }]}><p><TweetText text={tweet.quote.text} hasMedia={quoteMedia.length > 0} /></p></div>
-      {isQuoteLong && <span class="quote-more">Read full quoted post ↗</span>}
-      {quoteMedia.length > 0 && <div class:list={["quote-media", `media-count-${quoteMedia.length}`, { "media-grid": quoteMedia.length > 1 }]}>
-        {quoteMedia.map((item) => <img src={item.url} alt="" loading="lazy" decoding="async" />)}
+      {isQuoteLong && <a class="quote-more" href={`https://x.com/${tweet.quote.author.handle}/status/${tweet.quote.id}`} target="_blank" rel="noreferrer">Read full quoted post ↗</a>}
+      {quoteMedia.length > 0 && <div class:list={["quote-media", `media-count-${quoteMedia.length}`, { "media-grid": quoteMedia.length > 1 }]} data-media-group={`quote-${tweet.quote.id}`}>
+        {quoteMedia.map((item, index) => <button class="media-trigger" type="button" data-media-url={item.url} data-media-index={index} aria-label={`Open quoted image ${index + 1} of ${quoteMedia.length}`}><img src={item.url} alt="" loading="lazy" decoding="async" /></button>)}
       </div>}
-    </a>}
+    </div>}
     <footer class="tweet-actions">
-      <a class="action" href={xUrl} target="_blank" rel="noreferrer" aria-label="View conversation"><span>○</span></a>
-      <span class="action" aria-hidden="true"><span>↻</span></span>
-      <span class="action like" aria-label={`${tweet.likeCount.toLocaleString()} likes`}><span>♡</span><small>{Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(tweet.likeCount)}</small></span>
-      <span class="action" aria-hidden="true"><span>▯</span></span>
-      <a class="action" href={xUrl} target="_blank" rel="noreferrer" aria-label="Open original tweet"><span>↥</span></a>
+      <a class="action" href={xUrl} target="_blank" rel="noreferrer" aria-label="View conversation"><HugeIcon icon={Comment01Icon} size={18} /></a>
+      <span class="action" aria-hidden="true"><HugeIcon icon={RepeatIcon} size={18} /></span>
+      <span class="action like" aria-label={`${tweet.likeCount.toLocaleString()} likes`}><HugeIcon icon={FavouriteIcon} size={18} /><small>{Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(tweet.likeCount)}</small></span>
+      <span class="action" aria-hidden="true"><HugeIcon icon={Bookmark02Icon} size={18} /></span>
+      <a class="action" href={xUrl} target="_blank" rel="noreferrer" aria-label="Open original tweet"><HugeIcon icon={Share01Icon} size={18} /></a>
     </footer>
   </div>
 </article>

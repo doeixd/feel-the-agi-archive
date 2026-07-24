@@ -1,6 +1,23 @@
 ---
 import tweets from "../data/tweets.json";
 import TweetCard from "../components/TweetCard.astro";
+import HugeIcon from "../components/HugeIcon.astro";
+import {
+  ArrowDown01Icon,
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  Bookmark02Icon,
+  Cancel01Icon,
+  Comment01Icon,
+  FavouriteIcon,
+  Home01Icon,
+  InformationCircleIcon,
+  RepeatIcon,
+  Search01Icon,
+  Share01Icon,
+  ShuffleIcon,
+  Sun03Icon,
+} from "@hugeicons/core-free-icons";
 import "../styles/global.css";
 
 const years = [...new Set(tweets.map((tweet) => new Date(tweet.createdAt).getFullYear()))].sort((a, b) => b - a);
@@ -26,11 +43,11 @@ const years = [...new Set(tweets.map((tweet) => new Date(tweet.createdAt).getFul
       <aside class="left-rail">
         <a class="brand" href="/" aria-label="Feel The AGI home"><span class="mark">⟋</span><span>FEEL<br />THE AGI</span></a>
         <nav aria-label="Archive navigation">
-          <a class="active" href="#feed"><span>⌁</span> Archive</a>
-          <a href="#about"><span>i</span> Context</a>
-          <a href="https://x.com" target="_blank" rel="noreferrer"><span>↗</span> Original network</a>
+          <a class="active" href="#feed"><span><HugeIcon icon={Home01Icon} size={20} /></span> Archive</a>
+          <a href="#about"><span><HugeIcon icon={InformationCircleIcon} size={20} /></span> Context</a>
+          <a href="https://x.com" target="_blank" rel="noreferrer"><span><HugeIcon icon={Share01Icon} size={20} /></span> Original network</a>
         </nav>
-        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme"><span class="theme-icon">◐</span><span class="theme-label">Theme</span></button>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme"><span class="theme-icon"><HugeIcon icon={Sun03Icon} size={20} /></span><span class="theme-label">Theme</span></button>
         <p class="rail-note">A hand-kept record of the moment when the future stopped arriving slowly.</p>
       </aside>
 
@@ -38,7 +55,7 @@ const years = [...new Set(tweets.map((tweet) => new Date(tweet.createdAt).getFul
         <header class="mobile-topbar">
           <a href="/" class="mobile-avatar" aria-label="Feel The AGI home">⟋</a>
           <div><strong>Feel The AGI</strong><span>{tweets.length.toLocaleString()} posts</span></div>
-          <button class="theme-toggle mobile-theme-toggle" type="button" aria-label="Toggle color theme">◐</button>
+          <button class="theme-toggle mobile-theme-toggle" type="button" aria-label="Toggle color theme"><HugeIcon icon={Sun03Icon} size={20} /></button>
         </header>
         <header class="masthead">
           <div class="eyebrow"><span></span> FIELD NOTES · 2020—2026</div>
@@ -51,9 +68,9 @@ const years = [...new Set(tweets.map((tweet) => new Date(tweet.createdAt).getFul
           <div class="sort-tabs" role="group" aria-label="Sort archive">
             <button class="selected" data-sort="latest" aria-pressed="true">Latest first</button>
             <button data-sort="oldest" aria-pressed="false">Earliest</button>
-            <button data-sort="random" aria-pressed="false">⤨ Random</button>
+            <button data-sort="random" aria-pressed="false"><HugeIcon icon={ShuffleIcon} size={14} /> Random</button>
           </div>
-          <label class="search"><span>⌕</span><input id="search" type="search" placeholder="Search names, words, moments" aria-label="Search the archive" autocomplete="off" /></label>
+          <label class="search"><span><HugeIcon icon={Search01Icon} size={17} /></span><input id="search" type="search" placeholder="Search names, words, moments" aria-label="Search the archive" autocomplete="off" /></label>
         </div>
         <div class="year-strip" aria-label="Filter by year">
           <button class="selected" data-year="all" aria-pressed="true">All</button>
@@ -63,7 +80,7 @@ const years = [...new Set(tweets.map((tweet) => new Date(tweet.createdAt).getFul
         <div id="tweet-list" data-total={tweets.length}>
           {tweets.slice(0, 30).map((tweet) => <div data-date={tweet.createdAt} data-year={new Date(tweet.createdAt).getFullYear()}><TweetCard tweet={tweet} /></div>)}
         </div>
-        <div class="load-zone"><button id="load-more">Load 30 more <span>↓</span></button></div>
+        <div class="load-zone"><button id="load-more">Load 30 more <HugeIcon icon={ArrowDown01Icon} size={16} /></button></div>
         <section class="mobile-context" id="about">
           <span>ABOUT THE COLLECTION</span>
           <h2>Living through the winding-up of the world.</h2>
@@ -89,6 +106,19 @@ const years = [...new Set(tweets.map((tweet) => new Date(tweet.createdAt).getFul
         <p class="source-note">Tweets retain their original attribution and link back to X. Counts are captured from the archive, not live.</p>
       </aside>
     </main>
+    <dialog class="lightbox" id="media-lightbox" aria-label="Media viewer">
+      <div class="lightbox-toolbar"><span id="lightbox-count"></span><button id="lightbox-close" type="button" aria-label="Close media viewer"><HugeIcon icon={Cancel01Icon} size={24} /></button></div>
+      <button class="lightbox-nav lightbox-prev" id="lightbox-prev" type="button" aria-label="Previous image"><HugeIcon icon={ArrowLeft01Icon} size={28} /></button>
+      <figure><img id="lightbox-image" src="" alt="" /><figcaption id="lightbox-caption"></figcaption></figure>
+      <button class="lightbox-nav lightbox-next" id="lightbox-next" type="button" aria-label="Next image"><HugeIcon icon={ArrowRight01Icon} size={28} /></button>
+    </dialog>
+    <div class="icon-templates" aria-hidden="true">
+      <template id="icon-comment"><HugeIcon icon={Comment01Icon} size={18} /></template>
+      <template id="icon-repeat"><HugeIcon icon={RepeatIcon} size={18} /></template>
+      <template id="icon-favourite"><HugeIcon icon={FavouriteIcon} size={18} /></template>
+      <template id="icon-bookmark"><HugeIcon icon={Bookmark02Icon} size={18} /></template>
+      <template id="icon-share"><HugeIcon icon={Share01Icon} size={18} /></template>
+    </div>
     <script is:inline>
       const list = document.querySelector('#tweet-list');
       const sortButtons = [...document.querySelectorAll('[data-sort]')];
@@ -98,11 +128,21 @@ const years = [...new Set(tweets.map((tweet) => new Date(tweet.createdAt).getFul
       const clearFilters = document.querySelector('#clear-filters');
       const loadMore = document.querySelector('#load-more');
       const themeToggles = [...document.querySelectorAll('.theme-toggle')];
+      const lightbox = document.querySelector('#media-lightbox');
+      const lightboxImage = document.querySelector('#lightbox-image');
+      const lightboxCount = document.querySelector('#lightbox-count');
+      const lightboxClose = document.querySelector('#lightbox-close');
+      const lightboxPrev = document.querySelector('#lightbox-prev');
+      const lightboxNext = document.querySelector('#lightbox-next');
       let selectedYear = 'all';
       let shown = 30;
       let archive = null;
       let ordered = null;
       let activeSort = 'latest';
+      let loadingMore = false;
+      let lightboxItems = [];
+      let lightboxIndex = 0;
+      const icon = (name) => document.querySelector(`#icon-${name}`).innerHTML;
       const escapeHtml = (value = '') => value.replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
       const safeUrl = (value = '') => /^https?:\/\//.test(value) || value.startsWith('data:image/') ? value : '#';
       const linkify = (text, urls = [], hasMedia = false) => {
@@ -124,7 +164,7 @@ const years = [...new Set(tweets.map((tweet) => new Date(tweet.createdAt).getFul
         }
         return output + escapeHtml(text.slice(cursor));
       };
-      const gallery = (media = [], quote = false) => media.length ? `<div class="${quote ? 'quote-media' : 'media'} media-count-${media.length}${media.length > 1 ? ' media-grid' : ''}">${media.slice(0, 4).map((item) => `<img src="${escapeHtml(safeUrl(item.url))}" alt="" loading="lazy" decoding="async">`).join('')}</div>` : '';
+      const gallery = (media = [], quote = false, group = '') => media.length ? `<div class="${quote ? 'quote-media' : 'media'} media-count-${media.length}${media.length > 1 ? ' media-grid' : ''}" data-media-group="${escapeHtml(group)}">${media.slice(0, 4).map((item, index) => `<button class="media-trigger" type="button" data-media-url="${escapeHtml(safeUrl(item.url))}" data-media-index="${index}" aria-label="Open image ${index + 1} of ${media.length}"><img src="${escapeHtml(safeUrl(item.url))}" alt="" loading="lazy" decoding="async"></button>`).join('')}</div>` : '';
       const renderTweet = (tweet) => {
         const date = new Date(tweet.createdAt);
         const xUrl = `https://x.com/${encodeURIComponent(tweet.author.handle)}/status/${tweet.id}`;
@@ -133,8 +173,8 @@ const years = [...new Set(tweets.map((tweet) => new Date(tweet.createdAt).getFul
         const long = tweet.text.length > 700;
         const quoteLong = (tweet.quote?.text.length || 0) > 500;
         const avatar = tweet.author.avatarUrl ? `<img src="${escapeHtml(safeUrl(tweet.author.avatarUrl))}" alt="">` : escapeHtml(tweet.author.displayName.trim().slice(0, 2).toUpperCase());
-        const quote = tweet.quote ? `<a class="quote" href="https://x.com/${encodeURIComponent(tweet.quote.author.handle)}/status/${tweet.quote.id}" target="_blank" rel="noreferrer"><div><b>${escapeHtml(tweet.quote.author.displayName)}</b> <span>@${escapeHtml(tweet.quote.author.handle)}</span></div><div class="quote-copy${quoteLong ? ' collapsed' : ''}"><p>${linkify(tweet.quote.text, [], quoteMedia.length > 0)}</p></div>${quoteLong ? '<span class="quote-more">Read full quoted post ↗</span>' : ''}${gallery(quoteMedia, true)}</a>` : '';
-        return `<article class="tweet"><div class="avatar" style="--hue:${Number(tweet.author.avatarHue) || 220}">${avatar}</div><div class="tweet-body"><header class="tweet-header"><span class="name">${escapeHtml(tweet.author.displayName)}</span><a class="handle" href="https://x.com/${encodeURIComponent(tweet.author.handle)}" target="_blank" rel="noreferrer">@${escapeHtml(tweet.author.handle)}</a><span class="dot">·</span><time datetime="${escapeHtml(tweet.createdAt)}" title="${escapeHtml(date.toLocaleString())}">${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time><a class="tweet-menu" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="Open original tweet">•••</a></header>${tweet.replyToId ? '<p class="replying">Archived reply</p>' : ''}<div class="tweet-copy${long ? ' collapsed' : ''}"><p class="tweet-text">${linkify(tweet.text, tweet.urls, media.length > 0)}</p></div>${long ? '<button class="expand-copy" type="button" aria-expanded="false">Show more</button>' : ''}${gallery(media)}${quote}<footer class="tweet-actions"><a class="action" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="View conversation"><span>○</span></a><span class="action" aria-hidden="true"><span>↻</span></span><span class="action like" aria-label="${Number(tweet.likeCount).toLocaleString()} likes"><span>♡</span><small>${Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(tweet.likeCount)}</small></span><span class="action" aria-hidden="true"><span>▯</span></span><a class="action" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="Open original tweet"><span>↥</span></a></footer></div></article>`;
+        const quote = tweet.quote ? `<div class="quote"><a class="quote-source" href="https://x.com/${encodeURIComponent(tweet.quote.author.handle)}/status/${tweet.quote.id}" target="_blank" rel="noreferrer"><b>${escapeHtml(tweet.quote.author.displayName)}</b> <span>@${escapeHtml(tweet.quote.author.handle)}</span></a><div class="quote-copy${quoteLong ? ' collapsed' : ''}"><p>${linkify(tweet.quote.text, [], quoteMedia.length > 0)}</p></div>${quoteLong ? `<a class="quote-more" href="https://x.com/${encodeURIComponent(tweet.quote.author.handle)}/status/${tweet.quote.id}" target="_blank" rel="noreferrer">Read full quoted post ↗</a>` : ''}${gallery(quoteMedia, true, `quote-${tweet.quote.id}`)}</div>` : '';
+        return `<article class="tweet"><div class="avatar" style="--hue:${Number(tweet.author.avatarHue) || 220}">${avatar}</div><div class="tweet-body"><header class="tweet-header"><span class="name">${escapeHtml(tweet.author.displayName)}</span><a class="handle" href="https://x.com/${encodeURIComponent(tweet.author.handle)}" target="_blank" rel="noreferrer">@${escapeHtml(tweet.author.handle)}</a><span class="dot">·</span><time datetime="${escapeHtml(tweet.createdAt)}" title="${escapeHtml(date.toLocaleString())}">${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time><a class="tweet-menu" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="Open original tweet">•••</a></header>${tweet.replyToId ? '<p class="replying">Archived reply</p>' : ''}<div class="tweet-copy${long ? ' collapsed' : ''}"><p class="tweet-text">${linkify(tweet.text, tweet.urls, media.length > 0)}</p></div>${long ? '<button class="expand-copy" type="button" aria-expanded="false">Show more</button>' : ''}${gallery(media, false, tweet.id)}${quote}<footer class="tweet-actions"><a class="action" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="View conversation">${icon('comment')}</a><span class="action" aria-hidden="true">${icon('repeat')}</span><span class="action like" aria-label="${Number(tweet.likeCount).toLocaleString()} likes">${icon('favourite')}<small>${Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(tweet.likeCount)}</small></span><span class="action" aria-hidden="true">${icon('bookmark')}</span><a class="action" href="${xUrl}" target="_blank" rel="noreferrer" aria-label="Open original tweet">${icon('share')}</a></footer></div></article>`;
       };
       const ensureArchive = async () => {
         if (archive) return;
@@ -182,7 +222,6 @@ const years = [...new Set(tweets.map((tweet) => new Date(tweet.createdAt).getFul
       }));
       let searchTimer;
       search.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => { shown = 30; applyFilters(); }, 120); });
-      loadMore.addEventListener('click', () => { shown += 30; applyFilters(); });
       clearFilters.addEventListener('click', async () => {
         selectedYear = 'all'; search.value = '';
         yearButtons.forEach((item) => item.classList.toggle('selected', item.dataset.year === 'all'));
@@ -197,6 +236,48 @@ const years = [...new Set(tweets.map((tweet) => new Date(tweet.createdAt).getFul
         copy.classList.toggle('collapsed', expanded);
         button.setAttribute('aria-expanded', String(!expanded));
         button.textContent = expanded ? 'Show more' : 'Show less';
+      });
+      const loadNextPage = async () => {
+        if (loadingMore || loadMore.hidden) return;
+        loadingMore = true;
+        shown += 30;
+        await applyFilters();
+        loadingMore = false;
+      };
+      loadMore.addEventListener('click', loadNextPage);
+      const infiniteObserver = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) loadNextPage();
+      }, { rootMargin: '700px 0px' });
+      infiniteObserver.observe(document.querySelector('.load-zone'));
+      const updateLightbox = () => {
+        const item = lightboxItems[lightboxIndex];
+        if (!item) return;
+        lightboxImage.src = item.dataset.mediaUrl;
+        lightboxCount.textContent = `${lightboxIndex + 1} / ${lightboxItems.length}`;
+        lightboxPrev.hidden = lightboxItems.length < 2;
+        lightboxNext.hidden = lightboxItems.length < 2;
+      };
+      const stepLightbox = (direction) => {
+        lightboxIndex = (lightboxIndex + direction + lightboxItems.length) % lightboxItems.length;
+        updateLightbox();
+      };
+      document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('.media-trigger');
+        if (!trigger) return;
+        const gallery = trigger.closest('[data-media-group]');
+        lightboxItems = [...gallery.querySelectorAll('.media-trigger')];
+        lightboxIndex = lightboxItems.indexOf(trigger);
+        updateLightbox();
+        lightbox.showModal();
+      });
+      lightboxClose.addEventListener('click', () => lightbox.close());
+      lightboxPrev.addEventListener('click', () => stepLightbox(-1));
+      lightboxNext.addEventListener('click', () => stepLightbox(1));
+      lightbox.addEventListener('click', (event) => { if (event.target === lightbox) lightbox.close(); });
+      document.addEventListener('keydown', (event) => {
+        if (!lightbox.open) return;
+        if (event.key === 'ArrowLeft') stepLightbox(-1);
+        if (event.key === 'ArrowRight') stepLightbox(1);
       });
       themeToggles.forEach((toggle) => toggle.addEventListener('click', () => {
           const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
