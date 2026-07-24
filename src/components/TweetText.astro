@@ -12,6 +12,14 @@ const { text, urls = [], hasMedia = false } = Astro.props as {
 };
 
 const urlMap = new Map(urls.filter((item) => item.url).map((item) => [item.url, item]));
+const safeHref = (value: string) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? value : "#";
+  } catch {
+    return "#";
+  }
+};
 const pattern = /(https?:\/\/\S+|@[A-Za-z0-9_]+|#[\p{L}\p{N}_]+)/gu;
 const parts: Array<{ kind: "text" | "url" | "mention" | "hashtag"; value: string; href?: string; hidden?: boolean }> = [];
 let cursor = 0;
@@ -26,7 +34,7 @@ for (const match of text.matchAll(pattern)) {
     parts.push({
       kind: "url",
       value: entity?.displayUrl || value.replace(/^https?:\/\//, ""),
-      href: entity?.expandedUrl || value,
+      href: safeHref(entity?.expandedUrl || value),
       hidden: isTrailingMediaToken,
     });
   } else if (value.startsWith("@")) {

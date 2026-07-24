@@ -45,6 +45,7 @@ const quoteMedia = (tweet.quote?.media ?? []).filter((item) => item.type === "im
 const initials = tweet.author.displayName.trim().slice(0, 2).toUpperCase();
 const isLong = tweet.text.length > 700;
 const isQuoteLong = (tweet.quote?.text.length ?? 0) > 500;
+const quoteAuthorName = tweet.quote?.author.displayName ?? "Quoted post";
 ---
 
 <article class="tweet">
@@ -63,14 +64,14 @@ const isQuoteLong = (tweet.quote?.text.length ?? 0) > 500;
     <div class:list={["tweet-copy", { collapsed: isLong }]}><p class="tweet-text"><TweetText text={tweet.text} urls={tweet.urls} hasMedia={media.length > 0} /></p></div>
     {isLong && <button class="expand-copy" type="button" aria-expanded="false">Show more</button>}
     {media.length > 0 && <div class:list={["media", `media-count-${media.length}`, { "media-grid": media.length > 1 }]} data-media-group={tweet.id}>
-      {media.map((item, index) => <button class="media-trigger" type="button" data-media-url={item.url} data-media-index={index} aria-label={`Open image ${index + 1} of ${media.length}`}><img src={item.url} alt="" loading="lazy" decoding="async" /></button>)}
+      {media.map((item, index) => <button class="media-trigger" type="button" data-media-url={item.url} data-media-index={index} data-media-label={`${tweet.author.displayName}, image ${index + 1} of ${media.length}`} aria-label={`Open image ${index + 1} of ${media.length}`}><img src={item.url} alt="" loading="lazy" decoding="async" /></button>)}
     </div>}
     {tweet.quote && <div class="quote">
       <a class="quote-source" href={`https://x.com/${tweet.quote.author.handle}/status/${tweet.quote.id}`} target="_blank" rel="noreferrer"><b>{tweet.quote.author.displayName}</b> <span>@{tweet.quote.author.handle}</span></a>
       <div class:list={["quote-copy", { collapsed: isQuoteLong }]}><p><TweetText text={tweet.quote.text} urls={tweet.quote.urls} hasMedia={quoteMedia.length > 0} /></p></div>
       {isQuoteLong && <a class="quote-more" href={`https://x.com/${tweet.quote.author.handle}/status/${tweet.quote.id}`} target="_blank" rel="noreferrer">Read full quoted post ↗</a>}
       {quoteMedia.length > 0 && <div class:list={["quote-media", `media-count-${quoteMedia.length}`, { "media-grid": quoteMedia.length > 1 }]} data-media-group={`quote-${tweet.quote.id}`}>
-        {quoteMedia.map((item, index) => <button class="media-trigger" type="button" data-media-url={item.url} data-media-index={index} aria-label={`Open quoted image ${index + 1} of ${quoteMedia.length}`}><img src={item.url} alt="" loading="lazy" decoding="async" /></button>)}
+        {quoteMedia.map((item, index) => <button class="media-trigger" type="button" data-media-url={item.url} data-media-index={index} data-media-label={`${quoteAuthorName}, quoted image ${index + 1} of ${quoteMedia.length}`} aria-label={`Open quoted image ${index + 1} of ${quoteMedia.length}`}><img src={item.url} alt="" loading="lazy" decoding="async" /></button>)}
       </div>}
     </div>}
     <footer class="tweet-actions">
